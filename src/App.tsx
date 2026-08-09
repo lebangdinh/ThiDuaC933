@@ -32,23 +32,7 @@ import * as XLSX from 'xlsx';
 // --- Types ---
 
 type Supermarket = 'TGDD' | 'TOPZONE';
-type ViewMode = 'DASHBOARD' | 'STAR_PUSH' | 'STAR_DEDUCTION';
-
-interface DeductionRule {
-  id: string;
-  name: string;
-  basePoints: number;
-  penaltyPoints: number;
-  keywords: string[];
-}
-
-const DEDUCTION_RULES: DeductionRule[] = [
-  { id: 'phu-kien', name: 'Phụ Kiện', basePoints: 2, penaltyPoints: 3, keywords: [] },
-  { id: 'dich-vu', name: 'Dịch Vụ', basePoints: 2, penaltyPoints: 1, keywords: [] },
-  { id: 'tra-cham', name: 'Trả Chậm', basePoints: 2, penaltyPoints: 4, keywords: [] },
-  { id: 'ict', name: 'ICT', basePoints: 2, penaltyPoints: 2, keywords: [] },
-  { id: 'doanh-thu', name: 'Doanh Thu', basePoints: 1, penaltyPoints: 0, keywords: [] },
-];
+type ViewMode = 'DASHBOARD' | 'STAR_PUSH';
 
 const DEDUCTION_SUBJECTS: Record<Supermarket, { category: string; group: string }[]> = {
   TGDD: [
@@ -257,7 +241,6 @@ export default function App() {
   const [autoWatchMax, setAutoWatchMax] = useState(100);
   const [daysUsed, setDaysUsed] = useState(Math.max(1, currentDay - 1));
   const [searchQuery, setSearchQuery] = useState('');
-  const [deductionManualPoints, setDeductionManualPoints] = useState<Record<string, number>>({});
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [manualUnstarred, setManualUnstarred] = useState<string[]>([]);
   const [enableHighlight, setEnableHighlight] = useState(true);
@@ -312,14 +295,8 @@ export default function App() {
     localStorage.setItem('kpi_active_tab', activeTab);
     localStorage.setItem('kpi_auto_min', autoWatchMin.toString());
     localStorage.setItem('kpi_auto_max', autoWatchMax.toString());
-    localStorage.setItem('kpi_deduction_manual', JSON.stringify(deductionManualPoints));
     localStorage.setItem('kpi_enable_highlight', enableHighlight.toString());
-  }, [data, watchlist, manualUnstarred, activeTab, autoWatchMin, autoWatchMax, deductionManualPoints, enableHighlight]);
-
-  useEffect(() => {
-    const savedManual = localStorage.getItem('kpi_deduction_manual');
-    if (savedManual) setDeductionManualPoints(JSON.parse(savedManual));
-  }, []);
+  }, [data, watchlist, manualUnstarred, activeTab, autoWatchMin, autoWatchMax, enableHighlight]);
 
   const handleTabChange = (newTab: Supermarket) => {
     if (newTab === activeTab) return;
@@ -498,11 +475,6 @@ export default function App() {
     else if (currentPercent >= config.s1) stars = 1;
 
     const projectedPercent = (item.target === 0) ? 0 : ((getEffectiveCurrent(item) / daysUsed) * daysInMonth / item.target) * 100;
-    
-    let deduction = 0;
-    if (projectedPercent < 100) {
-      deduction = config.deduction;
-    }
 
     // Find next threshold
     let nextThreshold = null;
@@ -514,7 +486,7 @@ export default function App() {
     else if (currentPercent < config.s10) { nextThreshold = config.s10; nextStars = 10; }
     else if (currentPercent < config.s20) { nextThreshold = config.s20; nextStars = 20; }
 
-    return { stars, deduction, config, currentPercent, nextThreshold, nextStars };
+    return { stars, config, currentPercent, nextThreshold, nextStars };
   };
 
   const getCompletionPercent = (item: KPIData) => {
@@ -632,7 +604,6 @@ export default function App() {
       const currentPercent = getCompletionPercent(item);
       const projectedPercent = getProjectedPercent(item);
       const daily = calculateDaily(item);
-      const deduction = deductionStats.find(s => s.category.toLowerCase() === item.category.toLowerCase() && s.supermarket === activeTab);
       
       return {
         'Ngành hàng': item.category,
@@ -641,8 +612,7 @@ export default function App() {
         'Realtime': item.realtime || 0,
         '% Hoàn Thành': `${currentPercent.toFixed(1)}%`,
         '% Dự Kiến': `${projectedPercent.toFixed(1)}%`,
-        'Cần thêm/ngày': daily.toFixed(1),
-        'Trừ Sao': deduction?.starDeduction || 0
+        'Cần thêm/ngày': daily.toFixed(1)
       };
     });
 
@@ -653,45 +623,14 @@ export default function App() {
   };
 
   const copyMainTableToClipboard = () => {
-    const header = 'Ngành hàng\tTarget\tCurrent\tRealtime\t% Hoàn Thành\t% Dự Kiến\tCần thêm/ngày\tTrừ Sao\n';
+    const header = 'Ngành hàng\tTarget\tCurrent\tRealtime\t% Hoàn Thành\t% Dự Kiến\tCần thêm/ngày\n';
     const rows = filteredData.map(item => {
       const currentPercent = getCompletionPercent(item);
       const projectedPercent = getProjectedPercent(item);
       const daily = calculateDaily(item);
-      const deduction = deductionStats.find(s => s.category.toLowerCase() === item.category.toLowerCase() && s.supermarket === activeTab);
       
-      return `${item.category}\t${item.target}\t${item.current}\t${item.realtime || 0}\t${currentPercent.toFixed(1)}%\t${projectedPercent.toFixed(1)}%\t${daily.toFixed(1)}\t${deduction?.starDeduction || 0}`;
+      return `${item.category}\t${item.target}\t${item.current}\t${item.realtime || 0}\t${currentPercent.toFixed(1)}%\t${projectedPercent.toFixed(1)}%\t${daily.toFixed(1)}`;
     }).join('\n');
-    
-    navigator.clipboard.writeText(header + rows).then(() => {
-      setCopySuccess(true);
-      setTimeout(() => setCopySuccess(false), 2000);
-    });
-  };
-
-  const exportDeductionsToExcel = () => {
-    const exportData = deductionStats.map(s => ({
-      'Siêu Thị': s.supermarket,
-      'Ngành hàng': s.category,
-      'Nhóm': s.group,
-      'Sao ghi nhận 5 sao': '100%',
-      'Sao ghi nhận 10 sao': '120%',
-      'Sao ghi nhận 15 sao': '150%',
-      'Sao ghi nhận 20 sao': '250%',
-      'Số Sao bị trừ khi dùng sao': s.starDeduction > 0 ? `-${s.starDeduction}` : '0'
-    }));
-
-    const ws = XLSX.utils.json_to_sheet(exportData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Deductions');
-    XLSX.writeFile(wb, `Deductions_${CURRENT_MONTH_DISPLAY.replace('/', '_')}.xlsx`);
-  };
-
-  const copyDeductionsToClipboard = () => {
-    const header = 'Siêu Thị\tNgành hàng\tNhóm\tSao ghi nhận 5 sao\tSao ghi nhận 10 sao\tSao ghi nhận 15 sao\tSao ghi nhận 20 sao\tSố Sao bị trừ khi dùng sao\n';
-    const rows = deductionStats.map(s => 
-      `${s.supermarket}\t${s.category}\t${s.group}\t100%\t120%\t150%\t250%\t${s.starDeduction > 0 ? `-${s.starDeduction}` : '0'}`
-    ).join('\n');
     
     navigator.clipboard.writeText(header + rows).then(() => {
       setCopySuccess(true);
@@ -884,61 +823,6 @@ export default function App() {
 
   const activeSubjectsCount = data.filter(item => item.target > 0 && getEffectiveCurrent(item) > 0).length;
 
-  const deductionStats = useMemo(() => {
-    const allSubjects = [
-      ...DEDUCTION_SUBJECTS.TGDD.map(s => ({ ...s, supermarket: 'TGDD' as Supermarket })),
-      ...DEDUCTION_SUBJECTS.TOPZONE.map(s => ({ ...s, supermarket: 'TOPZONE' as Supermarket }))
-    ];
-
-    const stats = allSubjects.map(subject => {
-      // Find matching item in data
-      // We need to check data for both supermarkets
-      const savedData = localStorage.getItem(`kpi_data_${subject.supermarket}`);
-      const supermarketData: KPIData[] = savedData ? JSON.parse(savedData) : [];
-      
-      const item = supermarketData.find(d => d.category.toLowerCase() === subject.category.toLowerCase());
-      
-      // Use projected completion percentage
-      const projectedPercent = item ? ((getEffectiveCurrent(item) / daysUsed) * daysInMonth / item.target) * 100 : 0;
-      
-      const rule = DEDUCTION_RULES.find(r => r.name === subject.group);
-      const isUnder100 = projectedPercent < 100;
-      
-      let points = 0;
-      if (isUnder100 && rule) {
-        points = rule.basePoints + rule.penaltyPoints;
-      } else if (!isUnder100) {
-        points = 0; // Trên 100% thì bằng 0
-      }
-      
-      const manual = deductionManualPoints[`${subject.supermarket}_${subject.category}`] || 0;
-      const totalPoints = points + manual;
-
-      return {
-        ...subject,
-        target: item?.target || 0,
-        projectedPercent,
-        isUnder100,
-        points,
-        manual,
-        totalPoints,
-        id: `${subject.supermarket}_${subject.category}`
-      };
-    }).filter(s => s.target > 0);
-
-    // Sort by totalPoints descending to assign star deductions
-    const sorted = [...stats].sort((a, b) => b.totalPoints - a.totalPoints);
-    
-    return stats.map(s => {
-      const rank = sorted.findIndex(item => item.id === s.id);
-      // Mapping: Rank based star deduction
-      // We'll keep the previous formula or adjust if needed.
-      // The user says "Chạy Theo Công Thức", let's use a rank-based one.
-      const starDeduction = (s.totalPoints > 0 && s.projectedPercent < 100) ? Math.max(20, 100 - (rank * 5)) : 0;
-      return { ...s, starDeduction };
-    });
-  }, [data, deductionManualPoints, activeTab, daysUsed]);
-
   return (
     <div className="min-h-screen bg-[#F8F9FA] text-[#1A1A1A] font-sans selection:bg-[#1A1A1A] selection:text-white">
       {/* Sidebar / Navigation Rail */}
@@ -1056,12 +940,6 @@ export default function App() {
                       className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'STAR_PUSH' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                     >
                       Thi Đua Sao
-                    </button>
-                    <button 
-                      onClick={() => setViewMode('STAR_DEDUCTION')}
-                      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'STAR_DEDUCTION' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                    >
-                      Trừ Sao
                     </button>
                   </div>
                 </div>
@@ -1416,14 +1294,13 @@ export default function App() {
                     <th className="px-3 py-1.5 text-right">% Dự kiến HT</th>
                     <th className="px-3 py-1.5 text-right text-rose-600">Số còn thiếu</th>
                     <th className="px-3 py-1.5 text-right text-indigo-600">Mục tiêu/Ngày</th>
-                    <th className="px-3 py-1.5 text-right text-rose-500">Trừ Sao</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E5E7EB]">
                   <AnimatePresence mode="popLayout">
                     {filteredData.length === 0 ? (
                       <tr>
-                        <td colSpan={10} className="px-6 py-20 text-center">
+                        <td colSpan={9} className="px-6 py-20 text-center">
                           <div className="flex flex-col items-center gap-3 opacity-40">
                             <BarChart3 size={48} />
                             <p className="text-sm font-medium">Chưa có dữ liệu hoặc không có ngành hàng nào có target.</p>
@@ -1575,19 +1452,6 @@ export default function App() {
                                 </div>
                               )}
                             </td>
-                            <td className="px-3 py-1 text-right">
-                              {(() => {
-                                const deduction = deductionStats.find(s => s.category.toLowerCase() === item.category.toLowerCase() && s.supermarket === activeTab);
-                                return deduction && deduction.starDeduction > 0 ? (
-                                  <div className="flex flex-col items-end">
-                                    <span className="text-xs font-mono font-black text-rose-600">-{deduction.starDeduction}</span>
-                                    <span className="text-[8px] font-bold text-rose-400 uppercase">Sao</span>
-                                  </div>
-                                ) : (
-                                  <span className="text-xs font-mono font-black text-emerald-600">0</span>
-                                );
-                              })()}
-                            </td>
                           </motion.tr>
                         );
                       })
@@ -1599,7 +1463,7 @@ export default function App() {
           </section>
         </div>
       </div>
-    ) : viewMode === 'STAR_PUSH' ? (
+    ) : (
                 /* STAR PUSH VIEW */
                 <div className="space-y-6">
           <div className="bg-white p-6 rounded-2xl border border-[#E5E7EB] shadow-sm">
@@ -1613,54 +1477,14 @@ export default function App() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Important Items (High Deductions) */}
-              <div className="md:col-span-2 space-y-4">
-                <h3 className="text-sm font-black uppercase tracking-wider text-rose-600 flex items-center gap-2">
-                  <AlertCircle size={16} />
-                  Môn quan trọng cần Push (Dễ bị trừ sao cao)
-                </h3>
-                <div className="grid grid-cols-1 gap-3">
-                  {data.filter(item => {
-                    if (item.target <= 0) return false;
-                    const info = getStarInfo(item);
-                    return info && info.config.deduction >= 30 && info.currentPercent < 100;
-                  }).sort((a, b) => {
-                    const infoA = getStarInfo(a);
-                    const infoB = getStarInfo(b);
-                    return (infoB?.config.deduction || 0) - (infoA?.config.deduction || 0);
-                  }).map(item => {
-                    const info = getStarInfo(item)!;
-                    const daily = calculateDaily(item);
-                    return (
-                      <div key={item.id} className="bg-rose-50 border border-rose-100 p-4 rounded-2xl flex justify-between items-center">
-                        <div>
-                          <div className="text-sm font-black text-rose-900">{item.category}</div>
-                          <div className="text-[10px] font-bold text-rose-600 uppercase">Trừ {info.config.deduction} sao nếu không về số</div>
-                          <div className="mt-2 flex items-center gap-4">
-                            <div className="text-xs font-bold text-slate-500">Hiện tại: <span className="text-slate-900">{info.currentPercent.toFixed(1)}%</span></div>
-                            <div className="text-xs font-bold text-slate-500">Cần/Ngày: <span className="text-indigo-600">{daily.toLocaleString()}</span></div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">Cần thêm để có 1 sao</div>
-                          <div className="text-lg font-mono font-black text-rose-700">
-                            {Math.max(0, item.target - getEffectiveCurrent(item)).toLocaleString()}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
+            <div>
               {/* Star Opportunities */}
               <div className="space-y-4">
                 <h3 className="text-sm font-black uppercase tracking-wider text-amber-600 flex items-center gap-2">
                   <TrendingUp size={16} />
                   Cơ hội nhận thêm sao
                 </h3>
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {data.filter(item => {
                     if (item.target <= 0) return false;
                     const info = getStarInfo(item);
@@ -1705,7 +1529,6 @@ export default function App() {
                       <th className="px-4 py-3">Ngành hàng</th>
                       <th className="px-4 py-3 text-right">Tiến độ</th>
                       <th className="px-4 py-3 text-center">Sao hiện tại</th>
-                      <th className="px-4 py-3 text-center">Dự kiến trừ</th>
                       <th className="px-4 py-3 text-right">Mục tiêu kế</th>
                       <th className="px-4 py-3 text-right">Cần thêm</th>
                     </tr>
@@ -1723,13 +1546,6 @@ export default function App() {
                               <Star size={10} className="fill-current" />
                               {info.stars}
                             </div>
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            {info.deduction > 0 && (
-                              <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-rose-100 text-rose-700 rounded-full text-[10px] font-black">
-                                -{info.deduction}
-                              </div>
-                            )}
                           </td>
                           <td className="px-4 py-3 text-right">
                             {info.nextThreshold ? (
@@ -1750,130 +1566,7 @@ export default function App() {
               </div>
             </div>
           </div>
-        ) : (
-            <div className="space-y-8">
-              {/* Star Deduction View */}
-              <div className="bg-white rounded-[2rem] border border-[#E5E7EB] shadow-sm overflow-hidden">
-                <div className="p-8 border-b border-[#E5E7EB] bg-[#F9FAFB] flex flex-col md:flex-row justify-between items-center gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-rose-600 rounded-2xl flex items-center justify-center shadow-lg">
-                      <AlertCircle size={24} className="text-white" />
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-black uppercase tracking-tighter text-[#1A1A1A]">Bảng Tính Trừ Sao</h2>
-                      <p className="text-sm font-bold text-[#9CA3AF] uppercase tracking-widest">Dựa trên mức độ hoàn thành và quy tắc thi đua</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button 
-                      onClick={copyDeductionsToClipboard}
-                      className={`flex items-center gap-2 px-4 py-2 text-xs font-bold transition-all border rounded-xl ${copySuccess ? 'text-emerald-600 border-emerald-200 bg-emerald-50' : 'text-[#6B7280] hover:text-indigo-600 hover:bg-indigo-50 border-[#E5E7EB] bg-white'}`}
-                    >
-                      {copySuccess ? <Check size={14} /> : <Copy size={14} />}
-                      <span>{copySuccess ? 'Đã copy' : 'Copy Data'}</span>
-                    </button>
-                    <button 
-                      onClick={exportDeductionsToExcel}
-                      className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-[#6B7280] hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all border border-[#E5E7EB] bg-white"
-                    >
-                      <FileSpreadsheet size={14} />
-                      <span>Xuất Excel</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="p-8">
-                  <div className={isExporting ? "" : "overflow-x-auto"}>
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="bg-[#1A1A1A] text-white">
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest border border-white/20">Siêu Thị</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest border border-white/20">Ngành hàng</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest border border-white/20">Nhóm</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest border border-white/20 text-center bg-rose-500">5 sao</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest border border-white/20 text-center bg-amber-500">10 sao</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest border border-white/20 text-center bg-yellow-400">15 sao</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest border border-white/20 text-center bg-emerald-500">20 sao</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest border border-white/20 text-right">Số Sao bị trừ</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest border border-white/20 text-center">Cộng Thêm</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#E5E7EB]">
-                        {deductionStats.map((stat) => (
-                          <tr key={stat.id} className="hover:bg-rose-50/30 transition-colors">
-                            <td className="px-4 py-3 text-xs font-bold border border-[#E5E7EB]">{stat.supermarket}</td>
-                            <td className="px-4 py-3 text-xs font-black border border-[#E5E7EB]">{stat.category}</td>
-                            <td className="px-4 py-3 text-xs font-bold text-[#6B7280] border border-[#E5E7EB]">{stat.group}</td>
-                            <td className="px-4 py-3 text-xs font-mono font-bold text-center border border-[#E5E7EB] bg-rose-50">100%</td>
-                            <td className="px-4 py-3 text-xs font-mono font-bold text-center border border-[#E5E7EB] bg-amber-50">120%</td>
-                            <td className="px-4 py-3 text-xs font-mono font-bold text-center border border-[#E5E7EB] bg-yellow-50">150%</td>
-                            <td className="px-4 py-3 text-xs font-mono font-bold text-center border border-[#E5E7EB] bg-emerald-50">250%</td>
-                            <td className="px-4 py-3 text-right border border-[#E5E7EB]">
-                              <div className="flex flex-col items-end">
-                                <div className={`text-sm font-mono font-black ${stat.starDeduction > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
-                                  {stat.starDeduction > 0 ? `-${stat.starDeduction}` : '0'}
-                                </div>
-                                <div className="text-[8px] font-bold text-[#9CA3AF] uppercase">
-                                  {stat.projectedPercent.toFixed(1)}% dự kiến
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 text-center border border-[#E5E7EB]">
-                              <input 
-                                type="number"
-                                value={stat.manual || ''}
-                                onChange={(e) => {
-                                  const val = parseInt(e.target.value) || 0;
-                                  setDeductionManualPoints(prev => ({ ...prev, [stat.id]: val }));
-                                }}
-                                placeholder="0"
-                                className="w-12 px-1 py-1 bg-[#F3F4F6] border border-transparent rounded text-center font-mono font-bold focus:border-rose-500 focus:bg-white transition-all outline-none text-xs"
-                              />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div className="mt-12 p-8 bg-rose-50 rounded-[2rem] border border-rose-100">
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-                      <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 bg-rose-600 rounded-3xl flex items-center justify-center shadow-xl">
-                          <Star size={32} className="text-white fill-current" />
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-black text-rose-900 uppercase">Tổng Sao Bị Trừ</h3>
-                          <p className="text-sm font-bold text-rose-400 uppercase">Dựa trên mức điểm cao nhất của các hạng mục</p>
-                        </div>
-                      </div>
-                      <div className="text-center md:text-right">
-                        <div className="text-6xl font-mono font-black text-rose-600 tracking-tighter">
-                          -{Math.max(...deductionStats.map(s => s.starDeduction))}
-                        </div>
-                        <div className="text-xs font-black text-rose-400 uppercase tracking-[0.2em] mt-2">Tổng Sao Khấu Trừ</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 bg-white rounded-2xl border border-[#E5E7EB] flex items-start gap-3">
-                      <Info size={20} className="text-indigo-500 shrink-0 mt-0.5" />
-                      <p className="text-xs font-bold text-[#6B7280] leading-relaxed">
-                        Hệ thống tự động tính điểm dựa trên dữ liệu nhập vào. Nếu % hoàn thành trung bình của các môn trong nhóm &lt; 100%, điểm vi phạm sẽ được cộng vào.
-                      </p>
-                    </div>
-                    <div className="p-4 bg-white rounded-2xl border border-[#E5E7EB] flex items-start gap-3">
-                      <Settings2 size={20} className="text-amber-500 shrink-0 mt-0.5" />
-                      <p className="text-xs font-bold text-[#6B7280] leading-relaxed">
-                        Bạn có thể nhập tay điểm cộng thêm cho từng hạng mục. Dữ liệu này sẽ được lưu lại tự động trên trình duyệt của bạn.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+        )}
       </main>
     </div>
   </div>

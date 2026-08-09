@@ -238,6 +238,8 @@ export default function App() {
   const [desiredTargetPercent, setDesiredTargetPercent] = useState(100);
   const [autoWatchMin, setAutoWatchMin] = useState(60);
   const [autoWatchMax, setAutoWatchMax] = useState(100);
+  const watchRangeMin = Math.min(autoWatchMin, autoWatchMax);
+  const watchRangeMax = Math.max(autoWatchMin, autoWatchMax);
   const [daysUsed, setDaysUsed] = useState(Math.max(1, currentDay - 1));
   const [searchQuery, setSearchQuery] = useState('');
   const [deductionManualPoints, setDeductionManualPoints] = useState<Record<string, number>>({});
@@ -448,7 +450,7 @@ export default function App() {
     if (!item) return;
 
     const progress = getCompletionPercent(item);
-    const isAutoWatched = progress >= autoWatchMin && progress < autoWatchMax;
+    const isAutoWatched = progress >= watchRangeMin && progress <= watchRangeMax;
     const isCurrentlyWatched = watchlist.includes(id) || (isAutoWatched && !manualUnstarred.includes(id));
 
     if (isCurrentlyWatched) {
@@ -584,13 +586,13 @@ export default function App() {
       .filter(item => {
         if (item.target <= 0) return false;
         const progress = getCompletionPercent(item);
-        const isAutoWatched = progress >= autoWatchMin && progress < autoWatchMax;
+        const isAutoWatched = progress >= watchRangeMin && progress <= watchRangeMax;
         const isManuallyUnstarred = manualUnstarred.includes(item.id);
         const isManuallyStarred = watchlist.includes(item.id);
         return isManuallyStarred || (isAutoWatched && !isManuallyUnstarred);
       })
       .sort((a, b) => getCompletionPercent(b) - getCompletionPercent(a));
-  }, [data, watchlist, manualUnstarred, autoWatchMin, autoWatchMax]);
+  }, [data, watchlist, manualUnstarred, watchRangeMin, watchRangeMax]);
 
   const stats = useMemo(() => {
     if (filteredData.length === 0) return null;
@@ -1406,7 +1408,7 @@ export default function App() {
                         const daily = calculateDaily(item);
                         const progress = getCompletionPercent(item);
                         const projected = getProjectedPercent(item);
-                        const isAutoWatched = progress >= autoWatchMin && progress < autoWatchMax;
+                        const isAutoWatched = progress >= watchRangeMin && progress <= watchRangeMax;
                         const isWatched = watchlist.includes(item.id) || (isAutoWatched && !manualUnstarred.includes(item.id));
                         const current = getEffectiveCurrent(item);
                         const missing = Math.max(0, (item.target * desiredTargetPercent / 100) - current);

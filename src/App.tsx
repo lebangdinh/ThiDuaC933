@@ -828,28 +828,13 @@ export default function App() {
         <div className="max-w-6xl mx-auto p-8 space-y-8">
           {/* Header */}
           <header className="bg-white border border-[#E5E7EB] rounded-2xl p-6 shadow-sm space-y-5">
-            {/* Title and supermarket selector */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-[#E5E7EB]">
+            {/* Title */}
+            <div className="flex items-center gap-3 pb-5 border-b border-[#E5E7EB] min-w-0">
               <div className="flex items-center gap-3 min-w-0">
                 <h1 className="text-2xl font-bold tracking-tight whitespace-nowrap">Tính Toán Mục Tiêu KPI</h1>
                 <span className="shrink-0 px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-bold rounded-lg border border-indigo-100">
                   {CURRENT_MONTH_NAME}
                 </span>
-              </div>
-
-              <div className="flex p-1 bg-gray-100 rounded-xl border border-gray-200 self-start lg:self-auto">
-                <button
-                  onClick={() => handleTabChange('TGDD')}
-                  className={`min-w-32 px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${activeTab === 'TGDD' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                  Siêu thị TGDĐ
-                </button>
-                <button
-                  onClick={() => handleTabChange('TOPZONE')}
-                  className={`min-w-32 px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${activeTab === 'TOPZONE' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                  Siêu thị Topzone
-                </button>
               </div>
             </div>
 
@@ -950,6 +935,24 @@ export default function App() {
                   />
                   <span className="text-xs font-bold text-amber-700">%</span>
                 </label>
+              </div>
+            </div>
+
+            {/* Supermarket selector — familiar bottom-left position */}
+            <div className="flex justify-start pt-1">
+              <div className="inline-flex p-1 bg-gray-100 rounded-xl border border-gray-200">
+                <button
+                  onClick={() => handleTabChange('TGDD')}
+                  className={`min-w-36 px-5 py-2.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${activeTab === 'TGDD' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  Siêu thị TGDĐ
+                </button>
+                <button
+                  onClick={() => handleTabChange('TOPZONE')}
+                  className={`min-w-36 px-5 py-2.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${activeTab === 'TOPZONE' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  Siêu thị Topzone
+                </button>
               </div>
             </div>
           </header>

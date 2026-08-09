@@ -32,7 +32,6 @@ import * as XLSX from 'xlsx';
 // --- Types ---
 
 type Supermarket = 'TGDD' | 'TOPZONE';
-type ViewMode = 'DASHBOARD' | 'STAR_PUSH';
 
 const DEDUCTION_SUBJECTS: Record<Supermarket, { category: string; group: string }[]> = {
   TGDD: [
@@ -73,16 +72,6 @@ const DEDUCTION_SUBJECTS: Record<Supermarket, { category: string; group: string 
   ]
 };
 
-interface StarThresholds {
-  s1: number;
-  s2: number;
-  s3: number;
-  s5: number;
-  s10: number;
-  s20: number;
-  deduction: number;
-}
-
 interface KPIData {
   id: string;
   category: string;
@@ -94,44 +83,6 @@ interface KPIData {
 }
 
 // --- Constants ---
-
-const STAR_CONFIGS: Record<Supermarket, Record<string, StarThresholds>> = {
-  TGDD: {
-    'SIM': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 30 },
-    'SIM MOBIFONE&VINAPHONE': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 30 },
-    'TPBANK EVO VÀ VPBANK MWG': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 30 },
-    'VAS': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 30 },
-    'NẠP RÚT TIỀN TÀI KHOẢN NGÂN HÀNG': { s1: 100, s2: 120, s3: 150, s5: 200, s10: 220, s20: 250, deduction: 20 },
-    'VAY TIỀN MẶT CAKE VÀ FECREDIT': { s1: 100, s2: 120, s3: 150, s5: 200, s10: 220, s20: 250, deduction: 20 },
-    'VÍ TRẢ SAU': { s1: 100, s2: 120, s3: 150, s5: 200, s10: 220, s20: 250, deduction: 20 },
-    'Homecredit': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 50 },
-    'FECREDIT, SHINHAN, SAMSUNG FINANCE+': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 50 },
-    'Bảo hiểm Xe Máy, Ô tô, SS Care +, BHRV Homecredit': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 30 },
-    'Bảo hiểm': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 50 },
-    'Camera': { s1: 100, s2: 120, s3: 150, s5: 200, s10: 220, s20: 250, deduction: 20 },
-    'PIN SẠC DỰ PHÒNG': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 50 },
-    'TAI NGHE BLUETOOTH': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 30 },
-    'SMARTPHONE & TABLET ANDROID TRÊN 8 TRIỆU': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 40 },
-    'ANDROID SẢN PHẨM MỚI': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 40 },
-    'MÁY LỌC KHÔNG KHÍ - HÚT ẨM - HÚT BỤI': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 50 },
-    'Laptop': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 40 },
-    'ĐỒNG HỒ': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 40 },
-    'PHỤ KIỆN - ĐỒNG HỒ': { s1: 100, s2: 120, s3: 150, s5: 200, s10: 220, s20: 250, deduction: 20 },
-    'Realme': { s1: 100, s2: 120, s3: 150, s5: 200, s10: 220, s20: 250, deduction: 20 },
-    'Vivo': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 30 },
-  },
-  TOPZONE: {
-    'TPBANK EVO VÀ VPBANK MWG': { s1: 100, s2: 200, s3: 300, s5: 400, s10: 500, s20: 1000, deduction: 50 },
-    'PIN SẠC DỰ PHÒNG': { s1: 100, s2: 200, s3: 300, s5: 400, s10: 500, s20: 1000, deduction: 50 },
-    'VAS': { s1: 100, s2: 200, s3: 300, s5: 400, s10: 500, s20: 1000, deduction: 20 },
-    'VÍ TRẢ SAU': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 50 },
-    'PHỤ KIỆN - ĐỒNG HỒ': { s1: 100, s2: 200, s3: 300, s5: 400, s10: 500, s20: 1000, deduction: 20 },
-    'Homecredit': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 20 },
-    'FECREDIT, SHINHAN, SAMSUNG FINANCE+': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 20 },
-    'Bảo hiểm Xe Máy, Ô tô, SS Care +, BHRV Homecredit': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 30 },
-    'Bảo hiểm': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 30 },
-  }
-};
 
 // --- Constants & Helpers ---
 
@@ -228,7 +179,6 @@ const parseRealtimeData = (text: string): { category: string, value: number }[] 
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Supermarket>('TOPZONE');
-  const [viewMode, setViewMode] = useState<ViewMode>('DASHBOARD');
   const [biUrlTgdd, setBiUrlTgdd] = useState<string>(() => localStorage.getItem('thidua-bi-url-tgdd') || BI_URLS.TGDD);
   const [biUrlTopzone, setBiUrlTopzone] = useState<string>(() => localStorage.getItem('thidua-bi-url-topzone') || BI_URLS.TOPZONE);
   const [data, setData] = useState<KPIData[]>([]);
@@ -459,35 +409,6 @@ export default function App() {
   };
 
   const getEffectiveCurrent = (item: KPIData) => item.current + (item.realtime || 0);
-
-  const getStarInfo = (item: KPIData) => {
-    const config = STAR_CONFIGS[activeTab][item.category] || STAR_CONFIGS[activeTab][item.category.toUpperCase()];
-    if (!config) return null;
-
-    const currentPercent = (item.target === 0) ? 0 : (getEffectiveCurrent(item) / item.target) * 100;
-    
-    let stars = 0;
-    if (currentPercent >= config.s20) stars = 20;
-    else if (currentPercent >= config.s10) stars = 10;
-    else if (currentPercent >= config.s5) stars = 5;
-    else if (currentPercent >= config.s3) stars = 3;
-    else if (currentPercent >= config.s2) stars = 2;
-    else if (currentPercent >= config.s1) stars = 1;
-
-    const projectedPercent = (item.target === 0) ? 0 : ((getEffectiveCurrent(item) / daysUsed) * daysInMonth / item.target) * 100;
-
-    // Find next threshold
-    let nextThreshold = null;
-    let nextStars = 0;
-    if (currentPercent < config.s1) { nextThreshold = config.s1; nextStars = 1; }
-    else if (currentPercent < config.s2) { nextThreshold = config.s2; nextStars = 2; }
-    else if (currentPercent < config.s3) { nextThreshold = config.s3; nextStars = 3; }
-    else if (currentPercent < config.s5) { nextThreshold = config.s5; nextStars = 5; }
-    else if (currentPercent < config.s10) { nextThreshold = config.s10; nextStars = 10; }
-    else if (currentPercent < config.s20) { nextThreshold = config.s20; nextStars = 20; }
-
-    return { stars, config, currentPercent, nextThreshold, nextStars };
-  };
 
   const getCompletionPercent = (item: KPIData) => {
     const current = getEffectiveCurrent(item);
@@ -930,20 +851,6 @@ export default function App() {
                       Siêu thị Topzone
                     </button>
                   </div>
-                  <div className="flex p-1 bg-gray-100 rounded-xl border border-gray-200 ml-2">
-                    <button 
-                      onClick={() => setViewMode('DASHBOARD')}
-                      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'DASHBOARD' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                    >
-                      Dashboard
-                    </button>
-                    <button 
-                      onClick={() => setViewMode('STAR_PUSH')}
-                      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'STAR_PUSH' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                    >
-                      Thi Đua Sao
-                    </button>
-                  </div>
                 </div>
               </div>
 
@@ -1047,7 +954,6 @@ export default function App() {
           </header>
 
           <main className="mt-8">
-            {viewMode === 'DASHBOARD' ? (
               <div className="space-y-8">
                 {/* Watchlist Section */}
             {watchedItems.length > 0 && (
@@ -1465,110 +1371,6 @@ export default function App() {
           </section>
         </div>
       </div>
-    ) : (
-                /* STAR PUSH VIEW */
-                <div className="space-y-6">
-          <div className="bg-white p-6 rounded-2xl border border-[#E5E7EB] shadow-sm">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-amber-400 rounded-xl flex items-center justify-center shadow-lg">
-                <Star size={20} className="text-white fill-current" />
-              </div>
-              <div>
-                <h2 className="text-xl font-black uppercase tracking-tighter text-[#1a1a1a]">Thi Đua Sao & Push Số</h2>
-                <p className="text-xs font-bold text-[#9CA3AF] uppercase">Phân bổ sao hợp lý để về số cuối tháng</p>
-              </div>
-            </div>
-
-            <div>
-              {/* Star Opportunities */}
-              <div className="space-y-4">
-                <h3 className="text-sm font-black uppercase tracking-wider text-amber-600 flex items-center gap-2">
-                  <TrendingUp size={16} />
-                  Cơ hội nhận thêm sao
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {data.filter(item => {
-                    if (item.target <= 0) return false;
-                    const info = getStarInfo(item);
-                    return info && info.nextThreshold !== null && info.currentPercent >= 80;
-                  }).sort((a, b) => {
-                    const infoA = getStarInfo(a);
-                    const infoB = getStarInfo(b);
-                    return (infoB?.currentPercent || 0) - (infoA?.currentPercent || 0);
-                  }).map(item => {
-                    const info = getStarInfo(item)!;
-                    return (
-                      <div key={item.id} className="bg-amber-50 border border-amber-100 p-3 rounded-xl">
-                        <div className="text-xs font-black text-amber-900 truncate">{item.category}</div>
-                        <div className="flex justify-between items-end mt-1">
-                          <div className="text-[10px] font-bold text-amber-600 uppercase">
-                            {info.currentPercent.toFixed(1)}% → {info.nextThreshold}%
-                          </div>
-                          <div className="text-xs font-black text-amber-700">
-                            +{info.nextStars - info.stars} Sao
-                          </div>
-                        </div>
-                        <div className="mt-2 h-1.5 bg-amber-200/50 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-amber-400" 
-                            style={{ width: `${(info.currentPercent / info.nextThreshold!) * 100}%` }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* Full Star Table */}
-            <div className="mt-12">
-              <h3 className="text-sm font-black uppercase tracking-wider text-slate-700 mb-4">Bảng tổng hợp sao dự kiến</h3>
-              <div className={`${isExporting ? '' : 'overflow-x-auto'} border border-slate-100 rounded-2xl`}>
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 text-[10px] font-bold uppercase text-slate-500 border-b border-slate-100">
-                      <th className="px-4 py-3">Ngành hàng</th>
-                      <th className="px-4 py-3 text-right">Tiến độ</th>
-                      <th className="px-4 py-3 text-center">Sao hiện tại</th>
-                      <th className="px-4 py-3 text-right">Mục tiêu kế</th>
-                      <th className="px-4 py-3 text-right">Cần thêm</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {data.filter(item => item.target > 0).map(item => {
-                      const info = getStarInfo(item);
-                      if (!info) return null;
-                      return (
-                        <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="px-4 py-3 text-xs font-black text-slate-700">{item.category}</td>
-                          <td className="px-4 py-3 text-right font-mono text-xs font-bold">{info.currentPercent.toFixed(1)}%</td>
-                          <td className="px-4 py-3 text-center">
-                            <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-[10px] font-black">
-                              <Star size={10} className="fill-current" />
-                              {info.stars}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            {info.nextThreshold ? (
-                              <span className="text-[10px] font-bold text-slate-500">{info.nextThreshold}% (+{info.nextStars - info.stars} sao)</span>
-                            ) : (
-                              <span className="text-[10px] font-bold text-emerald-600 uppercase">Max Sao</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-right font-mono text-xs font-bold text-indigo-600">
-                            {info.nextThreshold ? Math.max(0, (item.target * info.nextThreshold / 100) - getEffectiveCurrent(item)).toLocaleString() : '-'}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </main>
     </div>
   </div>

@@ -930,8 +930,8 @@ export default function App() {
               </div>
             </div>
 
-            {/* Supermarket selector — familiar bottom-left position */}
-            <div className="flex justify-start pt-1">
+            {/* Supermarket selector and nearby data-entry actions */}
+            <div className="flex flex-wrap items-stretch justify-start gap-3 pt-1">
               <div className="inline-flex p-1 bg-gray-100 rounded-xl border border-gray-200">
                 <button
                   onClick={() => handleTabChange('TGDD')}
@@ -946,6 +946,24 @@ export default function App() {
                   Siêu thị Topzone
                 </button>
               </div>
+
+              <button
+                onClick={() => setShowImport(true)}
+                className="min-w-36 px-5 py-2.5 rounded-xl flex items-center justify-center gap-2 bg-indigo-50 text-indigo-600 border border-indigo-100 hover:shadow-md hover:-translate-y-0.5 transition-all"
+                title="Nhập dữ liệu Lũy Kế"
+              >
+                <ClipboardPaste size={19} className="shrink-0" />
+                <span className="text-xs font-black whitespace-nowrap">Nhập Lũy Kế</span>
+              </button>
+
+              <button
+                onClick={() => setShowRealtimeImport(true)}
+                className={`min-w-36 px-5 py-2.5 rounded-xl flex items-center justify-center gap-2 border hover:shadow-md hover:-translate-y-0.5 transition-all ${data.some(d => d.realtime !== undefined) ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}
+                title="Nhập dữ liệu Realtime"
+              >
+                <TrendingUp size={19} className="shrink-0" />
+                <span className="text-xs font-black whitespace-nowrap">Nhập Realtime</span>
+              </button>
             </div>
           </header>
 

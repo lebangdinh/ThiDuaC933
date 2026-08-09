@@ -827,128 +827,129 @@ export default function App() {
       <div className="pl-44 min-h-screen bg-[#F8F9FA]">
         <div className="max-w-6xl mx-auto p-8 space-y-8">
           {/* Header */}
-          <header className="bg-white border border-[#E5E7EB] rounded-2xl px-8 py-6 shadow-sm">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-1">
-                  <h1 className="text-2xl font-bold tracking-tight">Tính Toán Mục Tiêu KPI</h1>
-                  <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-xs font-bold rounded-md border border-indigo-100">
-                    {CURRENT_MONTH_NAME}
-                  </span>
+          <header className="bg-white border border-[#E5E7EB] rounded-2xl p-6 shadow-sm space-y-5">
+            {/* Title and supermarket selector */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-[#E5E7EB]">
+              <div className="flex items-center gap-3 min-w-0">
+                <h1 className="text-2xl font-bold tracking-tight whitespace-nowrap">Tính Toán Mục Tiêu KPI</h1>
+                <span className="shrink-0 px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-bold rounded-lg border border-indigo-100">
+                  {CURRENT_MONTH_NAME}
+                </span>
+              </div>
+
+              <div className="flex p-1 bg-gray-100 rounded-xl border border-gray-200 self-start lg:self-auto">
+                <button
+                  onClick={() => handleTabChange('TGDD')}
+                  className={`min-w-32 px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${activeTab === 'TGDD' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  Siêu thị TGDĐ
+                </button>
+                <button
+                  onClick={() => handleTabChange('TOPZONE')}
+                  className={`min-w-32 px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${activeTab === 'TOPZONE' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  Siêu thị Topzone
+                </button>
+              </div>
+            </div>
+
+            {/* Main controls */}
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+              <button
+                onClick={() => setShowRealtimeImport(true)}
+                className={`min-h-20 rounded-xl border px-4 flex items-center justify-center gap-3 font-bold transition-all ${data.some(d => d.realtime !== undefined) ? 'bg-amber-50 border-amber-200 text-amber-700 shadow-sm' : 'bg-white border-[#E5E7EB] text-[#6B7280] hover:bg-amber-50 hover:text-amber-700'}`}
+              >
+                <TrendingUp size={20} className="shrink-0" />
+                <span className="text-sm whitespace-nowrap">Nhập Realtime</span>
+              </button>
+
+              <div className="min-h-20 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-4 flex flex-col items-center justify-center">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF] whitespace-nowrap">Đã qua</span>
+                <span className="mt-1 text-lg font-mono font-black text-indigo-600 whitespace-nowrap">{daysUsed} ngày</span>
+              </div>
+
+              <div className="min-h-20 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-4 flex flex-col items-center justify-center">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF] whitespace-nowrap">Còn lại</span>
+                <span className="mt-1 text-lg font-mono font-black whitespace-nowrap">{Math.max(1, daysInMonth - daysUsed + 1)} ngày</span>
+              </div>
+
+              <label className="min-h-20 rounded-xl border border-[#E5E7EB] bg-[#F3F4F6] px-4 flex flex-col items-center justify-center cursor-text">
+                <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#6B7280] whitespace-nowrap">
+                  <Calendar size={14} />
+                  Ngày sử dụng
+                </span>
+                <span className="mt-1 flex items-center justify-center font-mono font-black whitespace-nowrap">
+                  <input
+                    type="number"
+                    value={daysUsed}
+                    onChange={(e) => setDaysUsed(Number(e.target.value))}
+                    className="w-12 bg-transparent text-center text-lg focus:outline-none"
+                  />
+                  <span className="text-sm text-[#6B7280]">/ {daysInMonth}</span>
+                </span>
+              </label>
+
+              <label className="min-h-20 rounded-xl border border-[#E5E7EB] bg-[#F3F4F6] px-4 flex flex-col items-center justify-center cursor-text">
+                <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#6B7280] whitespace-nowrap">
+                  <Settings2 size={14} />
+                  Mục tiêu
+                </span>
+                <span className="mt-1 flex items-center justify-center font-mono font-black whitespace-nowrap">
+                  <input
+                    type="number"
+                    value={desiredTargetPercent}
+                    onChange={(e) => setDesiredTargetPercent(Number(e.target.value))}
+                    className="w-16 bg-transparent text-center text-lg focus:outline-none"
+                  />
+                  <span className="text-sm text-[#6B7280]">%</span>
+                </span>
+              </label>
+
+              <button
+                onClick={() => setEnableHighlight(!enableHighlight)}
+                className={`min-h-20 rounded-xl border px-4 flex flex-col items-center justify-center gap-1 text-xs font-bold uppercase transition-all ${enableHighlight ? 'bg-rose-50 border-rose-200 text-rose-700 shadow-sm' : 'bg-[#F3F4F6] border-[#E5E7EB] text-[#6B7280] hover:bg-gray-100'}`}
+                title="Bật/Tắt Highlight TOP 3 thiếu hụt lớn nhất"
+              >
+                <span className={`w-2 h-2 rounded-full ${enableHighlight ? 'bg-rose-500 animate-pulse' : 'bg-gray-400'}`} />
+                <span className="whitespace-nowrap">Highlight Top 3</span>
+                <span className="text-[10px] whitespace-nowrap">{enableHighlight ? 'Đang bật' : 'Đang tắt'}</span>
+              </button>
+            </div>
+
+            {/* Watchlist range */}
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                  <Star size={19} />
                 </div>
-                <div className="flex items-center gap-2 mt-2">
-                  <div className="flex p-1 bg-gray-100 rounded-xl border border-gray-200">
-                    <button 
-                      onClick={() => handleTabChange('TGDD')}
-                      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${activeTab === 'TGDD' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                    >
-                      Siêu thị TGDĐ
-                    </button>
-                    <button 
-                      onClick={() => handleTabChange('TOPZONE')}
-                      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${activeTab === 'TOPZONE' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                    >
-                      Siêu thị Topzone
-                    </button>
-                  </div>
+                <div>
+                  <div className="text-sm font-black uppercase text-amber-800">Khoảng Watchlist</div>
+                  <div className="text-xs text-amber-700">Tự động theo dõi các môn nằm trong khoảng tiến độ này</div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4">
-                <button 
-                  onClick={() => setShowRealtimeImport(true)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all border ${
-                    data.some(d => d.realtime !== undefined) 
-                    ? 'bg-amber-50 border-amber-200 text-amber-600 shadow-sm' 
-                    : 'bg-white border-[#E5E7EB] text-[#6B7280] hover:bg-amber-50 hover:text-amber-600'
-                  }`}
-                >
-                  <TrendingUp size={16} />
-                  <span className="hidden sm:inline">Nhập Realtime</span>
-                </button>
-
-                <div className="flex flex-col items-end">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF]">Đã qua</span>
-                  <span className="text-lg font-mono font-bold text-indigo-600">{daysUsed} ngày</span>
-                </div>
-                <div className="h-8 w-px bg-[#E5E7EB]" />
-                <div className="flex flex-col items-end">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF]">Còn lại</span>
-                  <span className="text-lg font-mono font-bold">{Math.max(1, daysInMonth - daysUsed + 1)} ngày</span>
-                </div>
-                <div className="h-8 w-px bg-[#E5E7EB]" />
-                
-                <div className="flex items-center gap-2">
-                  <div className="bg-[#F3F4F6] p-1.5 rounded-lg flex items-center gap-2 border border-[#E5E7EB]">
-                    <Calendar size={14} className="text-[#6B7280]" />
-                    <span className="text-xs font-bold uppercase">Ngày SD:</span>
-                    <input 
-                      type="number"
-                      value={daysUsed}
-                      onChange={(e) => setDaysUsed(Number(e.target.value))}
-                      className="w-10 bg-transparent text-center font-mono font-bold focus:outline-none"
-                    />
-                    <span className="text-xs font-bold">/ {daysInMonth}</span>
-                  </div>
-
-                  <div className="bg-[#F3F4F6] p-1.5 rounded-lg flex items-center gap-2 border border-[#E5E7EB]">
-                    <Settings2 size={14} className="text-[#6B7280]" />
-                    <span className="text-xs font-bold uppercase">Mục tiêu:</span>
-                    <input 
-                      type="number"
-                      value={desiredTargetPercent}
-                      onChange={(e) => setDesiredTargetPercent(Number(e.target.value))}
-                      className="w-12 bg-transparent text-center font-mono font-bold focus:outline-none"
-                    />
-                    <span className="text-xs font-bold">%</span>
-                  </div>
-
-                  <div className="bg-amber-50 p-1.5 rounded-lg flex items-center gap-2 border border-amber-200">
-                    <Star size={14} className="text-amber-600" />
-                    <span className="text-[10px] font-bold uppercase text-amber-700">Watchlist:</span>
-                    <div className="flex items-center gap-1">
-                      <input 
-                        type="number"
-                        value={autoWatchMin}
-                        onChange={(e) => setAutoWatchMin(Number(e.target.value))}
-                        className="w-10 bg-transparent text-center font-mono font-bold text-amber-900 focus:outline-none"
-                      />
-                      <span className="text-[10px] text-amber-400">-</span>
-                      <input 
-                        type="number"
-                        value={autoWatchMax}
-                        onChange={(e) => setAutoWatchMax(Number(e.target.value))}
-                        className="w-10 bg-transparent text-center font-mono font-bold text-amber-900 focus:outline-none"
-                      />
-                      <span className="text-[10px] font-bold text-amber-700">%</span>
-                    </div>
-                    <button 
-                      onClick={() => {
-                        // Trigger a re-render/logic check (though automatic)
-                        const currentData = [...data];
-                        setData(currentData);
-                      }}
-                      className="p-1 hover:bg-amber-100 rounded text-amber-600 transition-colors"
-                      title="Cập nhật Watchlist"
-                    >
-                      <TrendingUp size={12} />
-                    </button>
-                  </div>
-
-                  {/* Highlight Toggle Button */}
-                  <button 
-                    onClick={() => setEnableHighlight(!enableHighlight)}
-                    className={`p-1.5 rounded-lg flex items-center gap-2 border transition-all text-xs font-bold uppercase cursor-pointer select-none ${
-                      enableHighlight 
-                        ? 'bg-rose-50 border-rose-200 text-rose-700 shadow-sm' 
-                        : 'bg-[#F3F4F6] border-[#E5E7EB] text-[#6B7280] hover:bg-gray-100'
-                    }`}
-                    title="Bật/Tắt Highlight TOP 3 thiếu hụt lớn nhất"
-                  >
-                    <span className={`w-2 h-2 rounded-full ${enableHighlight ? 'bg-rose-500 animate-pulse' : 'bg-gray-400'}`} />
-                    <span>Highlight Top 3 Thiếu</span>
-                  </button>
-                </div>
+              <div className="flex items-center gap-3 self-start sm:self-auto">
+                <label className="flex items-center gap-2 bg-white border border-amber-200 rounded-lg px-3 py-2">
+                  <span className="text-xs font-bold text-amber-700">Từ</span>
+                  <input
+                    type="number"
+                    value={autoWatchMin}
+                    onChange={(e) => setAutoWatchMin(Number(e.target.value))}
+                    className="w-14 bg-transparent text-center font-mono text-base font-black text-amber-900 focus:outline-none"
+                  />
+                  <span className="text-xs font-bold text-amber-700">%</span>
+                </label>
+                <span className="font-bold text-amber-500">—</span>
+                <label className="flex items-center gap-2 bg-white border border-amber-200 rounded-lg px-3 py-2">
+                  <span className="text-xs font-bold text-amber-700">Đến</span>
+                  <input
+                    type="number"
+                    value={autoWatchMax}
+                    onChange={(e) => setAutoWatchMax(Number(e.target.value))}
+                    className="w-14 bg-transparent text-center font-mono text-base font-black text-amber-900 focus:outline-none"
+                  />
+                  <span className="text-xs font-bold text-amber-700">%</span>
+                </label>
               </div>
             </div>
           </header>

@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Google AI Studio App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Be+Vietnam+Pro:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script>
+      // Defensive script to handle "Cannot set property fetch" error
+      (function() {
+        try {
+          var originalFetch = window.fetch;
+          Object.defineProperty(window, 'fetch', {
+            get: function() { return originalFetch; },
+            set: function() { /* Ignore attempts to overwrite fetch */ },
+            configurable: true,
+            enumerable: true
+          });
+        } catch (e) {
+          console.warn('Could not redefine window.fetch:', e);
+        }
+      })();
+    </script>
+    <script type="module" crossorigin src="./assets/index-Byx-V-cq.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CM2BPJd6.css">
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script>
+    (function () {
+      var LS_THEME = 'thidua-theme';
+      var LS_FONT = 'thidua-font-family';
+      var LS_SCALE = 'thidua-font-scale';
+
+      var THEMES = [
+        { id: 'dashboard', label: 'Dashboard BI — Xanh Ngọc', swatch: '#078BA4' },
+        { id: 'light',     label: 'Cảnh Báo — Vàng/Đỏ',       swatch: '#D32F2F' },
+        { id: 'ocean',     label: 'Dịu Nhẹ — Xanh Biển',      swatch: '#287DB8' },
+        { id: 'forest',    label: 'Thiên Nhiên — Xanh Lá',    swatch: '#2F8E62' },
+        { id: 'lavender',  label: 'Pastel — Tím Nhạt',        swatch: '#7656B5' },
+        { id: 'slate',     label: 'Tối Giản — Xám Sáng',      swatch: '#477C9B' }
+      ];
+      var FONTS = [
+        { id: 'default', label: 'Mặc định hệ thống', value: null },
+        { id: 'inter',   label: 'Inter — hiện đại',   value: "'Inter', ui-sans-serif, sans-serif" },
+        { id: 'bevn',    label: 'Be Vietnam Pro — rõ dấu tiếng Việt', value: "'Be Vietnam Pro', ui-sans-serif, sans-serif" },
+        { id: 'mono',    label: 'IBM Plex Mono — số liệu thẳng hàng', value: "'IBM Plex Mono', ui-monospace, monospace" }
+      ];
+      var SCALES = [
+        { id: '90',  label: 'Nhỏ' },
+        { id: '100', label: 'Vừa' },
+        { id: '112', label: 'Lớn' },
+        { id: '125', label: 'Rất lớn' }
+      ];
+
+      function get(key, def) { try { return localStorage.getItem(key) || def; } catch (e) { return def; } }
+      function set(key, val) { try { localStorage.setItem(key, val); } catch (e) {} }
+
+      // Áp dụng trạng thái đã lưu ngay khi tải trang (tránh nháy giao diện)
+      var theme = get(LS_THEME, 'dashboard');
+      var fontId = get(LS_FONT, 'default');
+      var scale = get(LS_SCALE, '100');
+      document.documentElement.setAttribute('data-theme', theme);
+      document.documentElement.style.setProperty('--user-font-scale', scale + '%');
+      var fontDef = FONTS.filter(function (f) { return f.id === fontId; })[0];
+      if (fontDef && fontDef.value) {
+        document.documentElement.style.setProperty('--user-font-family', fontDef.value);
+      }
+
+      function buildPanel() {
+        var btn = document.createElement('button');
+        btn.id = 'theme-switch-btn';
+        btn.title = 'Cài đặt giao diện';
+        btn.innerHTML = '⚙️';
+
+        var panel = document.createElement('div');
+        panel.id = 'theme-switch-panel';
+
+        var themeBtns = [], fontBtns = [], scaleBtns = [];
+
+        function renderThemeSection() {
+          var h = document.createElement('h4');
+          h.textContent = 'Màu giao diện';
+          panel.appendChild(h);
+          THEMES.forEach(function (t) {
+            var b = document.createElement('button');
+            b.className = 'opt-btn' + (theme === t.id ? ' active' : '');
+            b.innerHTML = '<span class="swatch" style="background:' + t.swatch + '"></span>' + t.label;
+            b.onclick = function () {
+              theme = t.id; set(LS_THEME, t.id);
+              document.documentElement.setAttribute('data-theme', t.id);
+              themeBtns.forEach(function (x) { x.btn.classList.toggle('active', x.id === theme); });
+            };
+            panel.appendChild(b);
+            themeBtns.push({ btn: b, id: t.id });
+          });
+        }
+
+        function renderFontSection() {
+          var h = document.createElement('h4');
+          h.textContent = 'Phông chữ';
+          panel.appendChild(h);
+          FONTS.forEach(function (f) {
+            var b = document.createElement('button');
+            b.className = 'opt-btn' + (fontId === f.id ? ' active' : '');
+            b.textContent = f.label;
+            b.onclick = function () {
+              fontId = f.id; set(LS_FONT, f.id);
+              if (f.value) { document.documentElement.style.setProperty('--user-font-family', f.value); }
+              else { document.documentElement.style.removeProperty('--user-font-family'); }
+              fontBtns.forEach(function (x) { x.btn.classList.toggle('active', x.id === fontId); });
+            };
+            panel.appendChild(b);
+            fontBtns.push({ btn: b, id: f.id });
+          });
+
+          var h2 = document.createElement('h4');
+          h2.textContent = 'Cỡ chữ tổng';
+          panel.appendChild(h2);
+          var row = document.createElement('div');
+          row.className = 'row-btns';
+          SCALES.forEach(function (s) {
+            var b = document.createElement('button');
+            b.className = 'opt-btn' + (scale === s.id ? ' active' : '');
+            b.textContent = s.label;
+            b.onclick = function () {
+              scale = s.id; set(LS_SCALE, s.id);
+              document.documentElement.style.setProperty('--user-font-scale', s.id + '%');
+              scaleBtns.forEach(function (x) { x.btn.classList.toggle('active', x.id === scale); });
+            };
+            row.appendChild(b);
+            scaleBtns.push({ btn: b, id: s.id });
+          });
+          panel.appendChild(row);
+        }
+
+        renderThemeSection();
+        renderFontSection();
+
+        btn.onclick = function () { panel.classList.toggle('open'); };
+        document.addEventListener('click', function (e) {
+          if (!panel.contains(e.target) && e.target !== btn && panel.classList.contains('open')) {
+            panel.classList.remove('open');
+          }
+        });
+
+        document.body.appendChild(panel);
+        document.body.appendChild(btn);
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', buildPanel);
+      } else {
+        buildPanel();
+      }
+    })();
+    </script>
+  </body>
+</html>
+

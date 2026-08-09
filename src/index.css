@@ -1,1 +1,173 @@
 @import "tailwindcss";
+
+/* ============================================================
+   ĐIỀU CHỈNH DỄ NHÌN — chỉ sửa cỡ chữ / màu / vùng bấm,
+   KHÔNG đổi bố cục hay logic của app.
+   ============================================================ */
+
+/* 1) Chữ trong bảng số liệu: bỏ hết các cỡ siêu nhỏ (7-11px)
+   Dùng rem để co giãn theo "Cỡ chữ tổng" người dùng chọn ở nút cài đặt */
+.text-\[7px\], .text-\[8px\], .text-\[9px\] {
+  font-size: 0.78rem !important;
+  line-height: 1.45 !important;
+}
+.text-\[10px\], .text-\[11px\] {
+  font-size: 0.84rem !important;
+  line-height: 1.45 !important;
+}
+.text-xs {
+  font-size: 0.875rem !important;
+  line-height: 1.45 !important;
+}
+.text-sm {
+  font-size: 0.9375rem !important;
+  line-height: 1.5 !important;
+}
+html { font-size: var(--user-font-scale, 100%); }
+
+/* Phông chữ tùy chỉnh (chọn ở nút cài đặt) */
+.font-sans, body {
+  font-family: var(--user-font-family, ui-sans-serif, system-ui, -apple-system, sans-serif) !important;
+}
+
+/* Nới khoảng cách ô bảng để số liệu không dính sát nhau */
+table td, table th {
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+}
+
+/* 2) Tăng tương phản chữ xám nhạt (đang khó đọc trên nền trắng) */
+.text-gray-400, .text-slate-400 { color: #52606d !important; }
+.text-gray-500, .text-slate-500 { color: #3c4652 !important; }
+.text-gray-700, .text-slate-700 { color: #1a2027 !important; }
+
+/* 3) HỆ THEME MÀU — lấy nguyên bộ 6 theme từ app "Cụm 933 — Phân Tích Thi Đua"
+   để 2 công cụ dùng chung ngôn ngữ màu sắc. Đổi theme = đổi biến CSS bên dưới,
+   không phải sửa từng chỗ trong component. */
+
+html[data-theme="dashboard"], html:not([data-theme]) {
+  --good:#08A878; --good-dim: rgba(8,168,120,0.14);
+  --warn-bg:#F1B926; --warn-dim: rgba(241,185,38,0.22); --warn-text:#A9760A;
+  --bad-bg:#EE4665; --bad-dim: rgba(238,70,101,0.13); --bad-text:#D6294A;
+  --accent:#078BA4; --accent-dim: rgba(7,139,164,0.10);
+  --page-bg-1:#EDF5F8; --page-bg-2:#F8FBFC;
+}
+html[data-theme="light"] {
+  --good:#1B5E20; --good-dim: rgba(27,94,32,0.13);
+  --warn-bg:#FFCC00; --warn-dim: rgba(255,204,0,0.22); --warn-text:#8B5E00;
+  --bad-bg:#D32F2F; --bad-dim: rgba(211,47,47,0.13); --bad-text:#D32F2F;
+  --accent:#0038A8; --accent-dim: rgba(0,56,168,0.08);
+  --page-bg-1:#FFDB4C; --page-bg-2:#FFFAEA;
+}
+html[data-theme="ocean"] {
+  --good:#26805A; --good-dim: rgba(38,128,90,0.13);
+  --warn-bg:#E8B04A; --warn-dim: rgba(232,176,74,0.22); --warn-text:#A46A12;
+  --bad-bg:#C94D5C; --bad-dim: rgba(201,77,92,0.13); --bad-text:#C94D5C;
+  --accent:#287DB8; --accent-dim: rgba(40,125,184,0.08);
+  --page-bg-1:#EAF4FF; --page-bg-2:#F4F9FF;
+}
+html[data-theme="forest"] {
+  --good:#197548; --good-dim: rgba(25,117,72,0.13);
+  --warn-bg:#D8B64A; --warn-dim: rgba(216,182,74,0.22); --warn-text:#9A6B13;
+  --bad-bg:#C54D55; --bad-dim: rgba(197,77,85,0.13); --bad-text:#C54D55;
+  --accent:#2F8E62; --accent-dim: rgba(47,142,98,0.08);
+  --page-bg-1:#EAF8F0; --page-bg-2:#F3FBF6;
+}
+html[data-theme="lavender"] {
+  --good:#3D8062; --good-dim: rgba(61,128,98,0.13);
+  --warn-bg:#D5AA4A; --warn-dim: rgba(213,170,74,0.22); --warn-text:#9A6A19;
+  --bad-bg:#C55267; --bad-dim: rgba(197,82,103,0.13); --bad-text:#C55267;
+  --accent:#7656B5; --accent-dim: rgba(118,86,181,0.08);
+  --page-bg-1:#F3EEFF; --page-bg-2:#F8F5FF;
+}
+html[data-theme="slate"] {
+  --good:#36775A; --good-dim: rgba(54,119,90,0.13);
+  --warn-bg:#C99A3E; --warn-dim: rgba(201,154,62,0.22); --warn-text:#906719;
+  --bad-bg:#BE515B; --bad-dim: rgba(190,81,91,0.13); --bad-text:#BE515B;
+  --accent:#477C9B; --accent-dim: rgba(71,124,155,0.08);
+  --page-bg-1:#EEF2F5; --page-bg-2:#F6F8FA;
+}
+
+/* -- Nhóm ĐỎ (bad) = chưa đạt / trừ sao -- */
+.bg-rose-50, .bg-rose-100 { background-color: var(--bad-dim) !important; }
+.bg-rose-400, .bg-rose-500, .bg-rose-600, .bg-rose-700 { background-color: var(--bad-bg) !important; }
+.text-rose-400, .text-rose-500, .text-rose-600,
+.text-rose-700, .text-rose-800, .text-rose-900 { color: var(--bad-text) !important; font-weight: 600; }
+
+/* -- Nhóm VÀNG (warn) = cảnh báo / gần đạt -- */
+.bg-amber-50, .bg-yellow-50, .bg-amber-100 { background-color: var(--warn-dim) !important; }
+.bg-amber-400, .bg-amber-500, .bg-amber-600,
+.bg-amber-700, .bg-yellow-400 { background-color: var(--warn-bg) !important; }
+.text-amber-500, .text-amber-600, .text-amber-700,
+.text-amber-800, .text-amber-900 { color: var(--warn-text) !important; font-weight: 600; }
+
+/* -- Nhóm XANH (good) = đạt / thưởng sao -- */
+.bg-emerald-50, .bg-emerald-100 { background-color: var(--good-dim) !important; }
+.bg-emerald-400, .bg-emerald-500, .bg-emerald-600 { background-color: var(--good) !important; }
+.text-emerald-600, .text-emerald-700 { color: var(--good) !important; font-weight: 600; }
+
+/* 3b) Màu nhấn chính (nút/tab đang chọn) — theo accent riêng của từng theme */
+.text-indigo-500, .text-indigo-600, .text-indigo-800 { color: var(--accent) !important; }
+.bg-indigo-50 { background-color: var(--accent-dim) !important; }
+.border-indigo-500, .border-indigo-600 { border-color: var(--accent) !important; }
+
+/* 3c) Nền trang đổi theo theme */
+body {
+  background: linear-gradient(180deg, var(--page-bg-1) 0%, var(--page-bg-2) 100%) !important;
+}
+
+/* 3d) Nút cài đặt nổi (do script trong index.html tạo ra) */
+#theme-switch-btn {
+  position: fixed; bottom: 18px; right: 18px; z-index: 9999;
+  width: 48px; height: 48px; border-radius: 999px; border: 1px solid rgba(0,0,0,0.08);
+  background: #FFFFFF; box-shadow: 0 8px 24px rgba(20,33,58,0.18);
+  font-size: 20px; display:flex; align-items:center; justify-content:center;
+  cursor: pointer;
+}
+#theme-switch-panel {
+  position: fixed; bottom: 74px; right: 18px; z-index: 9999;
+  background:#FFFFFF; border-radius: 14px; border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 12px 32px rgba(20,33,58,0.2); padding: 14px;
+  width: 268px; max-height: 76vh; overflow-y: auto;
+  display: none; flex-direction: column; gap: 4px;
+  font-family: 'Inter', sans-serif;
+}
+#theme-switch-panel.open { display: flex; }
+#theme-switch-panel h4 {
+  margin: 10px 0 6px; font-size: 11.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.05em; color: #6b7280;
+}
+#theme-switch-panel h4:first-child { margin-top: 0; }
+#theme-switch-panel .opt-btn {
+  all: unset; cursor: pointer; padding: 9px 10px; border-radius: 9px;
+  font-size: 13.5px; color: #1a2027; box-sizing: border-box;
+  display:flex; align-items:center; gap:8px; min-height: 38px;
+}
+#theme-switch-panel .opt-btn:hover { background: #F1F5F9; }
+#theme-switch-panel .opt-btn.active { background: var(--accent-dim); color: var(--accent); font-weight: 600; }
+#theme-switch-panel .opt-btn .swatch {
+  width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.12);
+}
+#theme-switch-panel .row-btns { display:flex; gap:6px; }
+#theme-switch-panel .row-btns .opt-btn { flex:1; justify-content:center; border: 1px solid #E5E7EB; }
+#theme-switch-panel hr { border: none; border-top: 1px solid #EEF0F2; margin: 10px 0; }
+#theme-switch-panel input[type="text"] {
+  all: unset; box-sizing: border-box; width: 100%; padding: 9px 10px;
+  border: 1px solid #D8DCE1; border-radius: 8px; font-size: 12.5px; color: #1a2027;
+  background: #FBFCFD;
+}
+#theme-switch-panel input[type="text"]:focus { border-color: var(--accent); }
+#theme-switch-panel .link-actions { display:flex; gap:6px; margin-top: 6px; }
+#theme-switch-panel .link-actions button {
+  all: unset; cursor:pointer; flex:1; text-align:center; font-size:12.5px; font-weight:600;
+  padding: 8px; border-radius: 8px;
+}
+#theme-switch-panel .btn-save { background: var(--accent); color:#fff; }
+#theme-switch-panel .btn-open { background:#F1F5F9; color:#1a2027; }
+#theme-switch-panel .link-saved-note { font-size: 11px; color: #6b7280; margin-top: 4px; min-height: 14px; }
+
+/* 4) Vùng bấm nút trên điện thoại tối thiểu ~44px theo chuẩn khuyến nghị */
+button {
+  min-height: 42px;
+  touch-action: manipulation;
+}

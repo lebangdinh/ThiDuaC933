@@ -21,7 +21,6 @@ import {
   Image as ImageIcon,
   FileSpreadsheet,
   ExternalLink,
-  Pencil,
   Copy,
   Check
 } from 'lucide-react';
@@ -32,6 +31,23 @@ import * as XLSX from 'xlsx';
 // --- Types ---
 
 type Supermarket = 'TGDD' | 'TOPZONE';
+type ViewMode = 'DASHBOARD' | 'STAR_PUSH' | 'STAR_DEDUCTION';
+
+interface DeductionRule {
+  id: string;
+  name: string;
+  basePoints: number;
+  penaltyPoints: number;
+  keywords: string[];
+}
+
+const DEDUCTION_RULES: DeductionRule[] = [
+  { id: 'phu-kien', name: 'Phụ Kiện', basePoints: 2, penaltyPoints: 3, keywords: [] },
+  { id: 'dich-vu', name: 'Dịch Vụ', basePoints: 2, penaltyPoints: 1, keywords: [] },
+  { id: 'tra-cham', name: 'Trả Chậm', basePoints: 2, penaltyPoints: 4, keywords: [] },
+  { id: 'ict', name: 'ICT', basePoints: 2, penaltyPoints: 2, keywords: [] },
+  { id: 'doanh-thu', name: 'Doanh Thu', basePoints: 1, penaltyPoints: 0, keywords: [] },
+];
 
 const DEDUCTION_SUBJECTS: Record<Supermarket, { category: string; group: string }[]> = {
   TGDD: [
@@ -72,6 +88,16 @@ const DEDUCTION_SUBJECTS: Record<Supermarket, { category: string; group: string 
   ]
 };
 
+interface StarThresholds {
+  s1: number;
+  s2: number;
+  s3: number;
+  s5: number;
+  s10: number;
+  s20: number;
+  deduction: number;
+}
+
 interface KPIData {
   id: string;
   category: string;
@@ -83,6 +109,44 @@ interface KPIData {
 }
 
 // --- Constants ---
+
+const STAR_CONFIGS: Record<Supermarket, Record<string, StarThresholds>> = {
+  TGDD: {
+    'SIM': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 30 },
+    'SIM MOBIFONE&VINAPHONE': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 30 },
+    'TPBANK EVO VÀ VPBANK MWG': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 30 },
+    'VAS': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 30 },
+    'NẠP RÚT TIỀN TÀI KHOẢN NGÂN HÀNG': { s1: 100, s2: 120, s3: 150, s5: 200, s10: 220, s20: 250, deduction: 20 },
+    'VAY TIỀN MẶT CAKE VÀ FECREDIT': { s1: 100, s2: 120, s3: 150, s5: 200, s10: 220, s20: 250, deduction: 20 },
+    'VÍ TRẢ SAU': { s1: 100, s2: 120, s3: 150, s5: 200, s10: 220, s20: 250, deduction: 20 },
+    'Homecredit': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 50 },
+    'FECREDIT, SHINHAN, SAMSUNG FINANCE+': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 50 },
+    'Bảo hiểm Xe Máy, Ô tô, SS Care +, BHRV Homecredit': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 30 },
+    'Bảo hiểm': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 50 },
+    'Camera': { s1: 100, s2: 120, s3: 150, s5: 200, s10: 220, s20: 250, deduction: 20 },
+    'PIN SẠC DỰ PHÒNG': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 50 },
+    'TAI NGHE BLUETOOTH': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 30 },
+    'SMARTPHONE & TABLET ANDROID TRÊN 8 TRIỆU': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 40 },
+    'ANDROID SẢN PHẨM MỚI': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 40 },
+    'MÁY LỌC KHÔNG KHÍ - HÚT ẨM - HÚT BỤI': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 50 },
+    'Laptop': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 40 },
+    'ĐỒNG HỒ': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 40 },
+    'PHỤ KIỆN - ĐỒNG HỒ': { s1: 100, s2: 120, s3: 150, s5: 200, s10: 220, s20: 250, deduction: 20 },
+    'Realme': { s1: 100, s2: 120, s3: 150, s5: 200, s10: 220, s20: 250, deduction: 20 },
+    'Vivo': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 30 },
+  },
+  TOPZONE: {
+    'TPBANK EVO VÀ VPBANK MWG': { s1: 100, s2: 200, s3: 300, s5: 400, s10: 500, s20: 1000, deduction: 50 },
+    'PIN SẠC DỰ PHÒNG': { s1: 100, s2: 200, s3: 300, s5: 400, s10: 500, s20: 1000, deduction: 50 },
+    'VAS': { s1: 100, s2: 200, s3: 300, s5: 400, s10: 500, s20: 1000, deduction: 20 },
+    'VÍ TRẢ SAU': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 50 },
+    'PHỤ KIỆN - ĐỒNG HỒ': { s1: 100, s2: 200, s3: 300, s5: 400, s10: 500, s20: 1000, deduction: 20 },
+    'Homecredit': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 20 },
+    'FECREDIT, SHINHAN, SAMSUNG FINANCE+': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 20 },
+    'Bảo hiểm Xe Máy, Ô tô, SS Care +, BHRV Homecredit': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 30 },
+    'Bảo hiểm': { s1: 100, s2: 150, s3: 200, s5: 250, s10: 300, s20: 400, deduction: 30 },
+  }
+};
 
 // --- Constants & Helpers ---
 
@@ -103,20 +167,6 @@ const CURRENT_DATE_DISPLAY = now.toLocaleDateString('vi-VN', { day: '2-digit', m
 const BI_URLS = {
   TGDD: 'https://bi.thegioididong.com/thi-dua-st?id=92210.0&tab=1&rt=2&dm=2&mt=2',
   TOPZONE: 'https://bi.thegioididong.com/thi-dua-st?id=92765&tab=1&rt=2&dm=2&mt=2'
-};
-
-const editBiUrl = (
-  storeName: string,
-  currentUrl: string,
-  storageKey: string,
-  setter: (url: string) => void
-) => {
-  const newUrl = window.prompt(`Dán link BI mới cho ${storeName} (link đổi mỗi tháng):`, currentUrl);
-  if (newUrl && newUrl.trim()) {
-    const trimmed = newUrl.trim();
-    localStorage.setItem(storageKey, trimmed);
-    setter(trimmed);
-  }
 };
 
 // --- Helper Functions ---
@@ -179,8 +229,7 @@ const parseRealtimeData = (text: string): { category: string, value: number }[] 
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Supermarket>('TOPZONE');
-  const [biUrlTgdd, setBiUrlTgdd] = useState<string>(() => localStorage.getItem('thidua-bi-url-tgdd') || BI_URLS.TGDD);
-  const [biUrlTopzone, setBiUrlTopzone] = useState<string>(() => localStorage.getItem('thidua-bi-url-topzone') || BI_URLS.TOPZONE);
+  const [viewMode, setViewMode] = useState<ViewMode>('DASHBOARD');
   const [data, setData] = useState<KPIData[]>([]);
   const [pastedTextTgdd, setPastedTextTgdd] = useState('');
   const [pastedTextTopzone, setPastedTextTopzone] = useState('');
@@ -191,6 +240,7 @@ export default function App() {
   const [autoWatchMax, setAutoWatchMax] = useState(100);
   const [daysUsed, setDaysUsed] = useState(Math.max(1, currentDay - 1));
   const [searchQuery, setSearchQuery] = useState('');
+  const [deductionManualPoints, setDeductionManualPoints] = useState<Record<string, number>>({});
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [manualUnstarred, setManualUnstarred] = useState<string[]>([]);
   const [enableHighlight, setEnableHighlight] = useState(true);
@@ -245,8 +295,14 @@ export default function App() {
     localStorage.setItem('kpi_active_tab', activeTab);
     localStorage.setItem('kpi_auto_min', autoWatchMin.toString());
     localStorage.setItem('kpi_auto_max', autoWatchMax.toString());
+    localStorage.setItem('kpi_deduction_manual', JSON.stringify(deductionManualPoints));
     localStorage.setItem('kpi_enable_highlight', enableHighlight.toString());
-  }, [data, watchlist, manualUnstarred, activeTab, autoWatchMin, autoWatchMax, enableHighlight]);
+  }, [data, watchlist, manualUnstarred, activeTab, autoWatchMin, autoWatchMax, deductionManualPoints, enableHighlight]);
+
+  useEffect(() => {
+    const savedManual = localStorage.getItem('kpi_deduction_manual');
+    if (savedManual) setDeductionManualPoints(JSON.parse(savedManual));
+  }, []);
 
   const handleTabChange = (newTab: Supermarket) => {
     if (newTab === activeTab) return;
@@ -410,6 +466,40 @@ export default function App() {
 
   const getEffectiveCurrent = (item: KPIData) => item.current + (item.realtime || 0);
 
+  const getStarInfo = (item: KPIData) => {
+    const config = STAR_CONFIGS[activeTab][item.category] || STAR_CONFIGS[activeTab][item.category.toUpperCase()];
+    if (!config) return null;
+
+    const currentPercent = (item.target === 0) ? 0 : (getEffectiveCurrent(item) / item.target) * 100;
+    
+    let stars = 0;
+    if (currentPercent >= config.s20) stars = 20;
+    else if (currentPercent >= config.s10) stars = 10;
+    else if (currentPercent >= config.s5) stars = 5;
+    else if (currentPercent >= config.s3) stars = 3;
+    else if (currentPercent >= config.s2) stars = 2;
+    else if (currentPercent >= config.s1) stars = 1;
+
+    const projectedPercent = (item.target === 0) ? 0 : ((getEffectiveCurrent(item) / daysUsed) * daysInMonth / item.target) * 100;
+    
+    let deduction = 0;
+    if (projectedPercent < 100) {
+      deduction = config.deduction;
+    }
+
+    // Find next threshold
+    let nextThreshold = null;
+    let nextStars = 0;
+    if (currentPercent < config.s1) { nextThreshold = config.s1; nextStars = 1; }
+    else if (currentPercent < config.s2) { nextThreshold = config.s2; nextStars = 2; }
+    else if (currentPercent < config.s3) { nextThreshold = config.s3; nextStars = 3; }
+    else if (currentPercent < config.s5) { nextThreshold = config.s5; nextStars = 5; }
+    else if (currentPercent < config.s10) { nextThreshold = config.s10; nextStars = 10; }
+    else if (currentPercent < config.s20) { nextThreshold = config.s20; nextStars = 20; }
+
+    return { stars, deduction, config, currentPercent, nextThreshold, nextStars };
+  };
+
   const getCompletionPercent = (item: KPIData) => {
     const current = getEffectiveCurrent(item);
     if (item.target === 0) return current > 0 ? 100 : 0;
@@ -525,6 +615,7 @@ export default function App() {
       const currentPercent = getCompletionPercent(item);
       const projectedPercent = getProjectedPercent(item);
       const daily = calculateDaily(item);
+      const deduction = deductionStats.find(s => s.category.toLowerCase() === item.category.toLowerCase() && s.supermarket === activeTab);
       
       return {
         'Ngành hàng': item.category,
@@ -533,7 +624,8 @@ export default function App() {
         'Realtime': item.realtime || 0,
         '% Hoàn Thành': `${currentPercent.toFixed(1)}%`,
         '% Dự Kiến': `${projectedPercent.toFixed(1)}%`,
-        'Cần thêm/ngày': daily.toFixed(1)
+        'Cần thêm/ngày': daily.toFixed(1),
+        'Trừ Sao': deduction?.starDeduction || 0
       };
     });
 
@@ -544,14 +636,45 @@ export default function App() {
   };
 
   const copyMainTableToClipboard = () => {
-    const header = 'Ngành hàng\tTarget\tCurrent\tRealtime\t% Hoàn Thành\t% Dự Kiến\tCần thêm/ngày\n';
+    const header = 'Ngành hàng\tTarget\tCurrent\tRealtime\t% Hoàn Thành\t% Dự Kiến\tCần thêm/ngày\tTrừ Sao\n';
     const rows = filteredData.map(item => {
       const currentPercent = getCompletionPercent(item);
       const projectedPercent = getProjectedPercent(item);
       const daily = calculateDaily(item);
+      const deduction = deductionStats.find(s => s.category.toLowerCase() === item.category.toLowerCase() && s.supermarket === activeTab);
       
-      return `${item.category}\t${item.target}\t${item.current}\t${item.realtime || 0}\t${currentPercent.toFixed(1)}%\t${projectedPercent.toFixed(1)}%\t${daily.toFixed(1)}`;
+      return `${item.category}\t${item.target}\t${item.current}\t${item.realtime || 0}\t${currentPercent.toFixed(1)}%\t${projectedPercent.toFixed(1)}%\t${daily.toFixed(1)}\t${deduction?.starDeduction || 0}`;
     }).join('\n');
+    
+    navigator.clipboard.writeText(header + rows).then(() => {
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    });
+  };
+
+  const exportDeductionsToExcel = () => {
+    const exportData = deductionStats.map(s => ({
+      'Siêu Thị': s.supermarket,
+      'Ngành hàng': s.category,
+      'Nhóm': s.group,
+      'Sao ghi nhận 5 sao': '100%',
+      'Sao ghi nhận 10 sao': '120%',
+      'Sao ghi nhận 15 sao': '150%',
+      'Sao ghi nhận 20 sao': '250%',
+      'Số Sao bị trừ khi dùng sao': s.starDeduction > 0 ? `-${s.starDeduction}` : '0'
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Deductions');
+    XLSX.writeFile(wb, `Deductions_${CURRENT_MONTH_DISPLAY.replace('/', '_')}.xlsx`);
+  };
+
+  const copyDeductionsToClipboard = () => {
+    const header = 'Siêu Thị\tNgành hàng\tNhóm\tSao ghi nhận 5 sao\tSao ghi nhận 10 sao\tSao ghi nhận 15 sao\tSao ghi nhận 20 sao\tSố Sao bị trừ khi dùng sao\n';
+    const rows = deductionStats.map(s => 
+      `${s.supermarket}\t${s.category}\t${s.group}\t100%\t120%\t150%\t250%\t${s.starDeduction > 0 ? `-${s.starDeduction}` : '0'}`
+    ).join('\n');
     
     navigator.clipboard.writeText(header + rows).then(() => {
       setCopySuccess(true);
@@ -744,230 +867,272 @@ export default function App() {
 
   const activeSubjectsCount = data.filter(item => item.target > 0 && getEffectiveCurrent(item) > 0).length;
 
+  const deductionStats = useMemo(() => {
+    const allSubjects = [
+      ...DEDUCTION_SUBJECTS.TGDD.map(s => ({ ...s, supermarket: 'TGDD' as Supermarket })),
+      ...DEDUCTION_SUBJECTS.TOPZONE.map(s => ({ ...s, supermarket: 'TOPZONE' as Supermarket }))
+    ];
+
+    const stats = allSubjects.map(subject => {
+      // Find matching item in data
+      // We need to check data for both supermarkets
+      const savedData = localStorage.getItem(`kpi_data_${subject.supermarket}`);
+      const supermarketData: KPIData[] = savedData ? JSON.parse(savedData) : [];
+      
+      const item = supermarketData.find(d => d.category.toLowerCase() === subject.category.toLowerCase());
+      
+      // Use projected completion percentage
+      const projectedPercent = item ? ((getEffectiveCurrent(item) / daysUsed) * daysInMonth / item.target) * 100 : 0;
+      
+      const rule = DEDUCTION_RULES.find(r => r.name === subject.group);
+      const isUnder100 = projectedPercent < 100;
+      
+      let points = 0;
+      if (isUnder100 && rule) {
+        points = rule.basePoints + rule.penaltyPoints;
+      } else if (!isUnder100) {
+        points = 0; // Trên 100% thì bằng 0
+      }
+      
+      const manual = deductionManualPoints[`${subject.supermarket}_${subject.category}`] || 0;
+      const totalPoints = points + manual;
+
+      return {
+        ...subject,
+        target: item?.target || 0,
+        projectedPercent,
+        isUnder100,
+        points,
+        manual,
+        totalPoints,
+        id: `${subject.supermarket}_${subject.category}`
+      };
+    }).filter(s => s.target > 0);
+
+    // Sort by totalPoints descending to assign star deductions
+    const sorted = [...stats].sort((a, b) => b.totalPoints - a.totalPoints);
+    
+    return stats.map(s => {
+      const rank = sorted.findIndex(item => item.id === s.id);
+      // Mapping: Rank based star deduction
+      // We'll keep the previous formula or adjust if needed.
+      // The user says "Chạy Theo Công Thức", let's use a rank-based one.
+      const starDeduction = (s.totalPoints > 0 && s.projectedPercent < 100) ? Math.max(20, 100 - (rank * 5)) : 0;
+      return { ...s, starDeduction };
+    });
+  }, [data, deductionManualPoints, activeTab, daysUsed]);
+
   return (
     <div className="min-h-screen bg-[#F8F9FA] text-[#1A1A1A] font-sans selection:bg-[#1A1A1A] selection:text-white">
       {/* Sidebar / Navigation Rail */}
-      <aside className="fixed left-0 top-0 bottom-0 w-44 bg-white border-r border-[#E5E7EB] z-50 flex flex-col px-4 py-6 shadow-sm overflow-y-auto">
-        <div className="mb-5">
-          <p className="text-sm font-black text-[#1A1A1A]">NHẬP DỮ LIỆU</p>
-          <p className="mt-1 text-xs text-[#6B7280]">Chọn loại số liệu cần cập nhật</p>
+      <div className="fixed left-0 top-0 bottom-0 w-16 bg-white border-r border-[#E5E7EB] z-50 flex flex-col items-center py-8 gap-8">
+        <div className="w-10 h-10 bg-[#1A1A1A] rounded-xl flex items-center justify-center text-white font-serif italic text-xl">
+          K
         </div>
-
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
+          <div className="w-12 h-12 rounded-xl flex flex-col items-center justify-center bg-[#1A1A1A] text-white shadow-lg relative" title="Tất cả">
+            <BarChart3 size={18} />
+            <span className="text-[8px] font-black mt-0.5">Tất cả</span>
+            {activeSubjectsCount > 0 && (
+              <div className="absolute -top-1 -right-1 bg-rose-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full border-2 border-white shadow-sm">
+                {activeSubjectsCount}
+              </div>
+            )}
+          </div>
           <button 
             onClick={() => setShowImport(true)}
-            className="w-full min-h-16 rounded-2xl flex items-center gap-3 px-4 bg-indigo-50 text-indigo-600 border border-indigo-100 hover:shadow-md hover:-translate-y-0.5 transition-all text-left"
+            className="w-12 h-12 rounded-xl flex flex-col items-center justify-center text-[#9CA3AF] hover:bg-indigo-50 hover:text-indigo-600 transition-all border border-transparent hover:border-indigo-100"
             title="Nhập dữ liệu Lũy Kế"
           >
-            <ClipboardPaste size={24} className="shrink-0" />
-            <span className="text-sm font-black">Lũy Kế</span>
+            <ClipboardPaste size={18} />
+            <span className="text-[8px] font-black mt-0.5">Lũy Kế</span>
           </button>
-
           <button 
             onClick={() => setShowRealtimeImport(true)}
-            className={`w-full min-h-16 rounded-2xl flex items-center gap-3 px-4 border hover:shadow-md hover:-translate-y-0.5 transition-all text-left ${data.some(d => d.realtime !== undefined) ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-white text-amber-700 border-amber-200 hover:bg-amber-50'}`}
-            title="Nhập dữ liệu Realtime"
+            className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center transition-all border ${data.some(d => d.realtime !== undefined) ? 'bg-amber-100 text-amber-600 border-amber-200' : 'text-[#9CA3AF] hover:bg-amber-50 hover:text-amber-600 border-transparent hover:border-amber-100'}`}
+            title="Nhập Realtime"
           >
-            <TrendingUp size={24} className="shrink-0" />
-            <span className="text-sm font-black">Realtime</span>
+            <TrendingUp size={18} />
+            <span className="text-[8px] font-black mt-0.5 uppercase">Realtime</span>
           </button>
+          <a 
+            href={BI_URLS.TGDD} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="w-12 h-12 rounded-xl flex flex-col items-center justify-center bg-white border border-[#E5E7EB] text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm"
+            title="BI TGDĐ"
+          >
+            <ExternalLink size={16} />
+            <span className="text-[8px] font-black mt-0.5">TGDĐ</span>
+          </a>
+          <a 
+            href={BI_URLS.TOPZONE} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="w-12 h-12 rounded-xl flex flex-col items-center justify-center bg-white border border-[#E5E7EB] text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm"
+            title="BI Topzone"
+          >
+            <ExternalLink size={16} />
+            <span className="text-[8px] font-black mt-0.5">TZ</span>
+          </a>
         </div>
-
-        <div className="mt-7 mb-3">
-          <p className="text-sm font-black text-[#1A1A1A]">LINK LẤY DỮ LIỆU</p>
-          <p className="mt-1 text-xs text-[#6B7280]">Mở BI hoặc sửa link khi cần</p>
+        <div className="mt-auto">
+          {/* Bottom space reserved */}
         </div>
-
-        <div className="flex flex-col gap-3">
-          <div className="flex items-stretch gap-2">
-            <a
-              href={biUrlTgdd}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 min-h-14 rounded-xl flex items-center gap-2 px-3 bg-white border border-[#E5E7EB] text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 transition-all shadow-sm"
-              title="Mở BI TGDĐ"
-            >
-              <ExternalLink size={20} className="shrink-0" />
-              <span className="text-sm font-black">TGDĐ</span>
-            </a>
-            <button
-              onClick={() => editBiUrl('TGDĐ', biUrlTgdd, 'thidua-bi-url-tgdd', setBiUrlTgdd)}
-              title="Sửa link BI TGDĐ"
-              aria-label="Sửa link BI TGDĐ"
-              className="w-11 min-h-14 rounded-xl bg-white border border-[#E5E7EB] flex items-center justify-center text-[#6B7280] hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 transition-all shadow-sm"
-            >
-              <Pencil size={18} />
-            </button>
-          </div>
-
-          <div className="flex items-stretch gap-2">
-            <a
-              href={biUrlTopzone}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 min-h-14 rounded-xl flex items-center gap-2 px-3 bg-white border border-[#E5E7EB] text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 transition-all shadow-sm"
-              title="Mở BI Topzone"
-            >
-              <ExternalLink size={20} className="shrink-0" />
-              <span className="text-sm font-black">TZ</span>
-            </a>
-            <button
-              onClick={() => editBiUrl('Topzone', biUrlTopzone, 'thidua-bi-url-topzone', setBiUrlTopzone)}
-              title="Sửa link BI Topzone"
-              aria-label="Sửa link BI Topzone"
-              className="w-11 min-h-14 rounded-xl bg-white border border-[#E5E7EB] flex items-center justify-center text-[#6B7280] hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 transition-all shadow-sm"
-            >
-              <Pencil size={18} />
-            </button>
-          </div>
-        </div>
-      </aside>
+      </div>
 
       {/* Main Content Area */}
-      <div className="pl-44 min-h-screen bg-[#F8F9FA]">
+      <div className="pl-16 min-h-screen bg-[#F8F9FA]">
         <div className="max-w-6xl mx-auto p-8 space-y-8">
           {/* Header */}
-          <header className="bg-white border border-[#E5E7EB] rounded-2xl p-6 shadow-sm space-y-5">
-            {/* Title */}
-            <div className="flex items-center gap-3 pb-5 border-b border-[#E5E7EB] min-w-0">
-              <div className="flex items-center gap-3 min-w-0">
-                <h1 className="text-2xl font-bold tracking-tight whitespace-nowrap">Tính Toán Mục Tiêu KPI</h1>
-                <span className="shrink-0 px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-bold rounded-lg border border-indigo-100">
-                  {CURRENT_MONTH_NAME}
-                </span>
-              </div>
-            </div>
-
-            {/* Main controls */}
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
-              <div className="min-h-20 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-4 flex flex-col items-center justify-center">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF] whitespace-nowrap">Đã qua</span>
-                <span className="mt-1 text-lg font-mono font-black text-indigo-600 whitespace-nowrap">{daysUsed} ngày</span>
-              </div>
-
-              <div className="min-h-20 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-4 flex flex-col items-center justify-center">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF] whitespace-nowrap">Còn lại</span>
-                <span className="mt-1 text-lg font-mono font-black whitespace-nowrap">{Math.max(1, daysInMonth - daysUsed + 1)} ngày</span>
-              </div>
-
-              <label className="min-h-20 rounded-xl border border-[#E5E7EB] bg-[#F3F4F6] px-4 flex flex-col items-center justify-center cursor-text">
-                <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#6B7280] whitespace-nowrap">
-                  <Calendar size={14} />
-                  Ngày sử dụng
-                </span>
-                <span className="mt-1 flex items-center justify-center font-mono font-black whitespace-nowrap">
-                  <input
-                    type="number"
-                    value={daysUsed}
-                    onChange={(e) => setDaysUsed(Number(e.target.value))}
-                    className="w-12 bg-transparent text-center text-lg focus:outline-none"
-                  />
-                  <span className="text-sm text-[#6B7280]">/ {daysInMonth}</span>
-                </span>
-              </label>
-
-              <label className="min-h-20 rounded-xl border border-[#E5E7EB] bg-[#F3F4F6] px-4 flex flex-col items-center justify-center cursor-text">
-                <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#6B7280] whitespace-nowrap">
-                  <Settings2 size={14} />
-                  Mục tiêu
-                </span>
-                <span className="mt-1 flex items-center justify-center font-mono font-black whitespace-nowrap">
-                  <input
-                    type="number"
-                    value={desiredTargetPercent}
-                    onChange={(e) => setDesiredTargetPercent(Number(e.target.value))}
-                    className="w-16 bg-transparent text-center text-lg focus:outline-none"
-                  />
-                  <span className="text-sm text-[#6B7280]">%</span>
-                </span>
-              </label>
-
-              <button
-                onClick={() => setEnableHighlight(!enableHighlight)}
-                className={`min-h-20 rounded-xl border px-4 flex flex-col items-center justify-center gap-1 text-xs font-bold uppercase transition-all ${enableHighlight ? 'bg-rose-50 border-rose-200 text-rose-700 shadow-sm' : 'bg-[#F3F4F6] border-[#E5E7EB] text-[#6B7280] hover:bg-gray-100'}`}
-                title="Bật/Tắt Highlight TOP 3 thiếu hụt lớn nhất"
-              >
-                <span className={`w-2 h-2 rounded-full ${enableHighlight ? 'bg-rose-500 animate-pulse' : 'bg-gray-400'}`} />
-                <span className="whitespace-nowrap">Highlight Top 3</span>
-                <span className="text-[10px] whitespace-nowrap">{enableHighlight ? 'Đang bật' : 'Đang tắt'}</span>
-              </button>
-            </div>
-
-            {/* Watchlist range */}
-            <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
-                  <Star size={19} />
+          <header className="bg-white border border-[#E5E7EB] rounded-2xl px-8 py-6 shadow-sm">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-1">
+                  <h1 className="text-2xl font-bold tracking-tight">Tính Toán Mục Tiêu KPI</h1>
+                  <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-xs font-bold rounded-md border border-indigo-100">
+                    {CURRENT_MONTH_NAME}
+                  </span>
                 </div>
-                <div>
-                  <div className="text-sm font-black uppercase text-amber-800">Khoảng Watchlist</div>
-                  <div className="text-xs text-amber-700">Tự động theo dõi các môn nằm trong khoảng tiến độ này</div>
+                <div className="flex items-center gap-2 mt-2">
+                  <div className="flex p-1 bg-gray-100 rounded-xl border border-gray-200">
+                    <button 
+                      onClick={() => handleTabChange('TGDD')}
+                      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${activeTab === 'TGDD' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                      Siêu thị TGDĐ
+                    </button>
+                    <button 
+                      onClick={() => handleTabChange('TOPZONE')}
+                      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${activeTab === 'TOPZONE' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                      Siêu thị Topzone
+                    </button>
+                  </div>
+                  <div className="flex p-1 bg-gray-100 rounded-xl border border-gray-200 ml-2">
+                    <button 
+                      onClick={() => setViewMode('DASHBOARD')}
+                      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'DASHBOARD' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                      Dashboard
+                    </button>
+                    <button 
+                      onClick={() => setViewMode('STAR_PUSH')}
+                      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'STAR_PUSH' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                      Thi Đua Sao
+                    </button>
+                    <button 
+                      onClick={() => setViewMode('STAR_DEDUCTION')}
+                      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'STAR_DEDUCTION' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                      Trừ Sao
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 self-start sm:self-auto">
-                <label className="flex items-center gap-2 bg-white border border-amber-200 rounded-lg px-3 py-2">
-                  <span className="text-xs font-bold text-amber-700">Từ</span>
-                  <input
-                    type="number"
-                    value={autoWatchMin}
-                    onChange={(e) => setAutoWatchMin(Number(e.target.value))}
-                    className="w-14 bg-transparent text-center font-mono text-base font-black text-amber-900 focus:outline-none"
-                  />
-                  <span className="text-xs font-bold text-amber-700">%</span>
-                </label>
-                <span className="font-bold text-amber-500">—</span>
-                <label className="flex items-center gap-2 bg-white border border-amber-200 rounded-lg px-3 py-2">
-                  <span className="text-xs font-bold text-amber-700">Đến</span>
-                  <input
-                    type="number"
-                    value={autoWatchMax}
-                    onChange={(e) => setAutoWatchMax(Number(e.target.value))}
-                    className="w-14 bg-transparent text-center font-mono text-base font-black text-amber-900 focus:outline-none"
-                  />
-                  <span className="text-xs font-bold text-amber-700">%</span>
-                </label>
-              </div>
-            </div>
-
-            {/* Supermarket selector and nearby data-entry actions */}
-            <div className="flex flex-wrap items-stretch justify-start gap-3 pt-1">
-              <div className="inline-flex p-1 bg-gray-100 rounded-xl border border-gray-200">
-                <button
-                  onClick={() => handleTabChange('TGDD')}
-                  className={`min-w-36 px-5 py-2.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${activeTab === 'TGDD' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              <div className="flex items-center gap-4">
+                <button 
+                  onClick={() => setShowRealtimeImport(true)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all border ${
+                    data.some(d => d.realtime !== undefined) 
+                    ? 'bg-amber-50 border-amber-200 text-amber-600 shadow-sm' 
+                    : 'bg-white border-[#E5E7EB] text-[#6B7280] hover:bg-amber-50 hover:text-amber-600'
+                  }`}
                 >
-                  Siêu thị TGDĐ
+                  <TrendingUp size={16} />
+                  <span className="hidden sm:inline">Nhập Realtime</span>
                 </button>
-                <button
-                  onClick={() => handleTabChange('TOPZONE')}
-                  className={`min-w-36 px-5 py-2.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${activeTab === 'TOPZONE' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                  Siêu thị Topzone
-                </button>
+
+                <div className="flex flex-col items-end">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF]">Đã qua</span>
+                  <span className="text-lg font-mono font-bold text-indigo-600">{daysUsed} ngày</span>
+                </div>
+                <div className="h-8 w-px bg-[#E5E7EB]" />
+                <div className="flex flex-col items-end">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF]">Còn lại</span>
+                  <span className="text-lg font-mono font-bold">{Math.max(1, daysInMonth - daysUsed + 1)} ngày</span>
+                </div>
+                <div className="h-8 w-px bg-[#E5E7EB]" />
+                
+                <div className="flex items-center gap-2">
+                  <div className="bg-[#F3F4F6] p-1.5 rounded-lg flex items-center gap-2 border border-[#E5E7EB]">
+                    <Calendar size={14} className="text-[#6B7280]" />
+                    <span className="text-xs font-bold uppercase">Ngày SD:</span>
+                    <input 
+                      type="number"
+                      value={daysUsed}
+                      onChange={(e) => setDaysUsed(Number(e.target.value))}
+                      className="w-10 bg-transparent text-center font-mono font-bold focus:outline-none"
+                    />
+                    <span className="text-xs font-bold">/ {daysInMonth}</span>
+                  </div>
+
+                  <div className="bg-[#F3F4F6] p-1.5 rounded-lg flex items-center gap-2 border border-[#E5E7EB]">
+                    <Settings2 size={14} className="text-[#6B7280]" />
+                    <span className="text-xs font-bold uppercase">Mục tiêu:</span>
+                    <input 
+                      type="number"
+                      value={desiredTargetPercent}
+                      onChange={(e) => setDesiredTargetPercent(Number(e.target.value))}
+                      className="w-12 bg-transparent text-center font-mono font-bold focus:outline-none"
+                    />
+                    <span className="text-xs font-bold">%</span>
+                  </div>
+
+                  <div className="bg-amber-50 p-1.5 rounded-lg flex items-center gap-2 border border-amber-200">
+                    <Star size={14} className="text-amber-600" />
+                    <span className="text-[10px] font-bold uppercase text-amber-700">Watchlist:</span>
+                    <div className="flex items-center gap-1">
+                      <input 
+                        type="number"
+                        value={autoWatchMin}
+                        onChange={(e) => setAutoWatchMin(Number(e.target.value))}
+                        className="w-10 bg-transparent text-center font-mono font-bold text-amber-900 focus:outline-none"
+                      />
+                      <span className="text-[10px] text-amber-400">-</span>
+                      <input 
+                        type="number"
+                        value={autoWatchMax}
+                        onChange={(e) => setAutoWatchMax(Number(e.target.value))}
+                        className="w-10 bg-transparent text-center font-mono font-bold text-amber-900 focus:outline-none"
+                      />
+                      <span className="text-[10px] font-bold text-amber-700">%</span>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        // Trigger a re-render/logic check (though automatic)
+                        const currentData = [...data];
+                        setData(currentData);
+                      }}
+                      className="p-1 hover:bg-amber-100 rounded text-amber-600 transition-colors"
+                      title="Cập nhật Watchlist"
+                    >
+                      <TrendingUp size={12} />
+                    </button>
+                  </div>
+
+                  {/* Highlight Toggle Button */}
+                  <button 
+                    onClick={() => setEnableHighlight(!enableHighlight)}
+                    className={`p-1.5 rounded-lg flex items-center gap-2 border transition-all text-xs font-bold uppercase cursor-pointer select-none ${
+                      enableHighlight 
+                        ? 'bg-rose-50 border-rose-200 text-rose-700 shadow-sm' 
+                        : 'bg-[#F3F4F6] border-[#E5E7EB] text-[#6B7280] hover:bg-gray-100'
+                    }`}
+                    title="Bật/Tắt Highlight TOP 3 thiếu hụt lớn nhất"
+                  >
+                    <span className={`w-2 h-2 rounded-full ${enableHighlight ? 'bg-rose-500 animate-pulse' : 'bg-gray-400'}`} />
+                    <span>Highlight Top 3 Thiếu</span>
+                  </button>
+                </div>
               </div>
-
-              <button
-                onClick={() => setShowImport(true)}
-                className="min-w-36 px-5 py-2.5 rounded-xl flex items-center justify-center gap-2 bg-indigo-50 text-indigo-600 border border-indigo-100 hover:shadow-md hover:-translate-y-0.5 transition-all"
-                title="Nhập dữ liệu Lũy Kế"
-              >
-                <ClipboardPaste size={19} className="shrink-0" />
-                <span className="text-xs font-black whitespace-nowrap">Nhập Lũy Kế</span>
-              </button>
-
-              <button
-                onClick={() => setShowRealtimeImport(true)}
-                className={`min-w-36 px-5 py-2.5 rounded-xl flex items-center justify-center gap-2 border hover:shadow-md hover:-translate-y-0.5 transition-all ${data.some(d => d.realtime !== undefined) ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}
-                title="Nhập dữ liệu Realtime"
-              >
-                <TrendingUp size={19} className="shrink-0" />
-                <span className="text-xs font-black whitespace-nowrap">Nhập Realtime</span>
-              </button>
             </div>
           </header>
 
           <main className="mt-8">
+            {viewMode === 'DASHBOARD' ? (
               <div className="space-y-8">
                 {/* Watchlist Section */}
             {watchedItems.length > 0 && (
@@ -1216,13 +1381,14 @@ export default function App() {
                     <th className="px-3 py-1.5 text-right">% Dự kiến HT</th>
                     <th className="px-3 py-1.5 text-right text-rose-600">Số còn thiếu</th>
                     <th className="px-3 py-1.5 text-right text-indigo-600">Mục tiêu/Ngày</th>
+                    <th className="px-3 py-1.5 text-right text-rose-500">Trừ Sao</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E5E7EB]">
                   <AnimatePresence mode="popLayout">
                     {filteredData.length === 0 ? (
                       <tr>
-                        <td colSpan={9} className="px-6 py-20 text-center">
+                        <td colSpan={10} className="px-6 py-20 text-center">
                           <div className="flex flex-col items-center gap-3 opacity-40">
                             <BarChart3 size={48} />
                             <p className="text-sm font-medium">Chưa có dữ liệu hoặc không có ngành hàng nào có target.</p>
@@ -1374,6 +1540,19 @@ export default function App() {
                                 </div>
                               )}
                             </td>
+                            <td className="px-3 py-1 text-right">
+                              {(() => {
+                                const deduction = deductionStats.find(s => s.category.toLowerCase() === item.category.toLowerCase() && s.supermarket === activeTab);
+                                return deduction && deduction.starDeduction > 0 ? (
+                                  <div className="flex flex-col items-end">
+                                    <span className="text-xs font-mono font-black text-rose-600">-{deduction.starDeduction}</span>
+                                    <span className="text-[8px] font-bold text-rose-400 uppercase">Sao</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-xs font-mono font-black text-emerald-600">0</span>
+                                );
+                              })()}
+                            </td>
                           </motion.tr>
                         );
                       })
@@ -1385,6 +1564,281 @@ export default function App() {
           </section>
         </div>
       </div>
+    ) : viewMode === 'STAR_PUSH' ? (
+                /* STAR PUSH VIEW */
+                <div className="space-y-6">
+          <div className="bg-white p-6 rounded-2xl border border-[#E5E7EB] shadow-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-amber-400 rounded-xl flex items-center justify-center shadow-lg">
+                <Star size={20} className="text-white fill-current" />
+              </div>
+              <div>
+                <h2 className="text-xl font-black uppercase tracking-tighter text-[#1a1a1a]">Thi Đua Sao & Push Số</h2>
+                <p className="text-xs font-bold text-[#9CA3AF] uppercase">Phân bổ sao hợp lý để về số cuối tháng</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Important Items (High Deductions) */}
+              <div className="md:col-span-2 space-y-4">
+                <h3 className="text-sm font-black uppercase tracking-wider text-rose-600 flex items-center gap-2">
+                  <AlertCircle size={16} />
+                  Môn quan trọng cần Push (Dễ bị trừ sao cao)
+                </h3>
+                <div className="grid grid-cols-1 gap-3">
+                  {data.filter(item => {
+                    if (item.target <= 0) return false;
+                    const info = getStarInfo(item);
+                    return info && info.config.deduction >= 30 && info.currentPercent < 100;
+                  }).sort((a, b) => {
+                    const infoA = getStarInfo(a);
+                    const infoB = getStarInfo(b);
+                    return (infoB?.config.deduction || 0) - (infoA?.config.deduction || 0);
+                  }).map(item => {
+                    const info = getStarInfo(item)!;
+                    const daily = calculateDaily(item);
+                    return (
+                      <div key={item.id} className="bg-rose-50 border border-rose-100 p-4 rounded-2xl flex justify-between items-center">
+                        <div>
+                          <div className="text-sm font-black text-rose-900">{item.category}</div>
+                          <div className="text-[10px] font-bold text-rose-600 uppercase">Trừ {info.config.deduction} sao nếu không về số</div>
+                          <div className="mt-2 flex items-center gap-4">
+                            <div className="text-xs font-bold text-slate-500">Hiện tại: <span className="text-slate-900">{info.currentPercent.toFixed(1)}%</span></div>
+                            <div className="text-xs font-bold text-slate-500">Cần/Ngày: <span className="text-indigo-600">{daily.toLocaleString()}</span></div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">Cần thêm để có 1 sao</div>
+                          <div className="text-lg font-mono font-black text-rose-700">
+                            {Math.max(0, item.target - getEffectiveCurrent(item)).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Star Opportunities */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-black uppercase tracking-wider text-amber-600 flex items-center gap-2">
+                  <TrendingUp size={16} />
+                  Cơ hội nhận thêm sao
+                </h3>
+                <div className="space-y-3">
+                  {data.filter(item => {
+                    if (item.target <= 0) return false;
+                    const info = getStarInfo(item);
+                    return info && info.nextThreshold !== null && info.currentPercent >= 80;
+                  }).sort((a, b) => {
+                    const infoA = getStarInfo(a);
+                    const infoB = getStarInfo(b);
+                    return (infoB?.currentPercent || 0) - (infoA?.currentPercent || 0);
+                  }).map(item => {
+                    const info = getStarInfo(item)!;
+                    return (
+                      <div key={item.id} className="bg-amber-50 border border-amber-100 p-3 rounded-xl">
+                        <div className="text-xs font-black text-amber-900 truncate">{item.category}</div>
+                        <div className="flex justify-between items-end mt-1">
+                          <div className="text-[10px] font-bold text-amber-600 uppercase">
+                            {info.currentPercent.toFixed(1)}% → {info.nextThreshold}%
+                          </div>
+                          <div className="text-xs font-black text-amber-700">
+                            +{info.nextStars - info.stars} Sao
+                          </div>
+                        </div>
+                        <div className="mt-2 h-1.5 bg-amber-200/50 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-amber-400" 
+                            style={{ width: `${(info.currentPercent / info.nextThreshold!) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Full Star Table */}
+            <div className="mt-12">
+              <h3 className="text-sm font-black uppercase tracking-wider text-slate-700 mb-4">Bảng tổng hợp sao dự kiến</h3>
+              <div className={`${isExporting ? '' : 'overflow-x-auto'} border border-slate-100 rounded-2xl`}>
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 text-[10px] font-bold uppercase text-slate-500 border-b border-slate-100">
+                      <th className="px-4 py-3">Ngành hàng</th>
+                      <th className="px-4 py-3 text-right">Tiến độ</th>
+                      <th className="px-4 py-3 text-center">Sao hiện tại</th>
+                      <th className="px-4 py-3 text-center">Dự kiến trừ</th>
+                      <th className="px-4 py-3 text-right">Mục tiêu kế</th>
+                      <th className="px-4 py-3 text-right">Cần thêm</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {data.filter(item => item.target > 0).map(item => {
+                      const info = getStarInfo(item);
+                      if (!info) return null;
+                      return (
+                        <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="px-4 py-3 text-xs font-black text-slate-700">{item.category}</td>
+                          <td className="px-4 py-3 text-right font-mono text-xs font-bold">{info.currentPercent.toFixed(1)}%</td>
+                          <td className="px-4 py-3 text-center">
+                            <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-[10px] font-black">
+                              <Star size={10} className="fill-current" />
+                              {info.stars}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            {info.deduction > 0 && (
+                              <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-rose-100 text-rose-700 rounded-full text-[10px] font-black">
+                                -{info.deduction}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            {info.nextThreshold ? (
+                              <span className="text-[10px] font-bold text-slate-500">{info.nextThreshold}% (+{info.nextStars - info.stars} sao)</span>
+                            ) : (
+                              <span className="text-[10px] font-bold text-emerald-600 uppercase">Max Sao</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-right font-mono text-xs font-bold text-indigo-600">
+                            {info.nextThreshold ? Math.max(0, (item.target * info.nextThreshold / 100) - getEffectiveCurrent(item)).toLocaleString() : '-'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+            <div className="space-y-8">
+              {/* Star Deduction View */}
+              <div className="bg-white rounded-[2rem] border border-[#E5E7EB] shadow-sm overflow-hidden">
+                <div className="p-8 border-b border-[#E5E7EB] bg-[#F9FAFB] flex flex-col md:flex-row justify-between items-center gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-rose-600 rounded-2xl flex items-center justify-center shadow-lg">
+                      <AlertCircle size={24} className="text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-black uppercase tracking-tighter text-[#1A1A1A]">Bảng Tính Trừ Sao</h2>
+                      <p className="text-sm font-bold text-[#9CA3AF] uppercase tracking-widest">Dựa trên mức độ hoàn thành và quy tắc thi đua</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={copyDeductionsToClipboard}
+                      className={`flex items-center gap-2 px-4 py-2 text-xs font-bold transition-all border rounded-xl ${copySuccess ? 'text-emerald-600 border-emerald-200 bg-emerald-50' : 'text-[#6B7280] hover:text-indigo-600 hover:bg-indigo-50 border-[#E5E7EB] bg-white'}`}
+                    >
+                      {copySuccess ? <Check size={14} /> : <Copy size={14} />}
+                      <span>{copySuccess ? 'Đã copy' : 'Copy Data'}</span>
+                    </button>
+                    <button 
+                      onClick={exportDeductionsToExcel}
+                      className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-[#6B7280] hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all border border-[#E5E7EB] bg-white"
+                    >
+                      <FileSpreadsheet size={14} />
+                      <span>Xuất Excel</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-8">
+                  <div className={isExporting ? "" : "overflow-x-auto"}>
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-[#1A1A1A] text-white">
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest border border-white/20">Siêu Thị</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest border border-white/20">Ngành hàng</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest border border-white/20">Nhóm</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest border border-white/20 text-center bg-rose-500">5 sao</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest border border-white/20 text-center bg-amber-500">10 sao</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest border border-white/20 text-center bg-yellow-400">15 sao</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest border border-white/20 text-center bg-emerald-500">20 sao</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest border border-white/20 text-right">Số Sao bị trừ</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest border border-white/20 text-center">Cộng Thêm</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#E5E7EB]">
+                        {deductionStats.map((stat) => (
+                          <tr key={stat.id} className="hover:bg-rose-50/30 transition-colors">
+                            <td className="px-4 py-3 text-xs font-bold border border-[#E5E7EB]">{stat.supermarket}</td>
+                            <td className="px-4 py-3 text-xs font-black border border-[#E5E7EB]">{stat.category}</td>
+                            <td className="px-4 py-3 text-xs font-bold text-[#6B7280] border border-[#E5E7EB]">{stat.group}</td>
+                            <td className="px-4 py-3 text-xs font-mono font-bold text-center border border-[#E5E7EB] bg-rose-50">100%</td>
+                            <td className="px-4 py-3 text-xs font-mono font-bold text-center border border-[#E5E7EB] bg-amber-50">120%</td>
+                            <td className="px-4 py-3 text-xs font-mono font-bold text-center border border-[#E5E7EB] bg-yellow-50">150%</td>
+                            <td className="px-4 py-3 text-xs font-mono font-bold text-center border border-[#E5E7EB] bg-emerald-50">250%</td>
+                            <td className="px-4 py-3 text-right border border-[#E5E7EB]">
+                              <div className="flex flex-col items-end">
+                                <div className={`text-sm font-mono font-black ${stat.starDeduction > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                                  {stat.starDeduction > 0 ? `-${stat.starDeduction}` : '0'}
+                                </div>
+                                <div className="text-[8px] font-bold text-[#9CA3AF] uppercase">
+                                  {stat.projectedPercent.toFixed(1)}% dự kiến
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-center border border-[#E5E7EB]">
+                              <input 
+                                type="number"
+                                value={stat.manual || ''}
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value) || 0;
+                                  setDeductionManualPoints(prev => ({ ...prev, [stat.id]: val }));
+                                }}
+                                placeholder="0"
+                                className="w-12 px-1 py-1 bg-[#F3F4F6] border border-transparent rounded text-center font-mono font-bold focus:border-rose-500 focus:bg-white transition-all outline-none text-xs"
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="mt-12 p-8 bg-rose-50 rounded-[2rem] border border-rose-100">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+                      <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 bg-rose-600 rounded-3xl flex items-center justify-center shadow-xl">
+                          <Star size={32} className="text-white fill-current" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-black text-rose-900 uppercase">Tổng Sao Bị Trừ</h3>
+                          <p className="text-sm font-bold text-rose-400 uppercase">Dựa trên mức điểm cao nhất của các hạng mục</p>
+                        </div>
+                      </div>
+                      <div className="text-center md:text-right">
+                        <div className="text-6xl font-mono font-black text-rose-600 tracking-tighter">
+                          -{Math.max(...deductionStats.map(s => s.starDeduction))}
+                        </div>
+                        <div className="text-xs font-black text-rose-400 uppercase tracking-[0.2em] mt-2">Tổng Sao Khấu Trừ</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 bg-white rounded-2xl border border-[#E5E7EB] flex items-start gap-3">
+                      <Info size={20} className="text-indigo-500 shrink-0 mt-0.5" />
+                      <p className="text-xs font-bold text-[#6B7280] leading-relaxed">
+                        Hệ thống tự động tính điểm dựa trên dữ liệu nhập vào. Nếu % hoàn thành trung bình của các môn trong nhóm &lt; 100%, điểm vi phạm sẽ được cộng vào.
+                      </p>
+                    </div>
+                    <div className="p-4 bg-white rounded-2xl border border-[#E5E7EB] flex items-start gap-3">
+                      <Settings2 size={20} className="text-amber-500 shrink-0 mt-0.5" />
+                      <p className="text-xs font-bold text-[#6B7280] leading-relaxed">
+                        Bạn có thể nhập tay điểm cộng thêm cho từng hạng mục. Dữ liệu này sẽ được lưu lại tự động trên trình duyệt của bạn.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
       </main>
     </div>
   </div>

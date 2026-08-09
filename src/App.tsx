@@ -839,15 +839,7 @@ export default function App() {
             </div>
 
             {/* Main controls */}
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-              <button
-                onClick={() => setShowRealtimeImport(true)}
-                className={`min-h-20 rounded-xl border px-4 flex items-center justify-center gap-3 font-bold transition-all ${data.some(d => d.realtime !== undefined) ? 'bg-amber-50 border-amber-200 text-amber-700 shadow-sm' : 'bg-white border-[#E5E7EB] text-[#6B7280] hover:bg-amber-50 hover:text-amber-700'}`}
-              >
-                <TrendingUp size={20} className="shrink-0" />
-                <span className="text-sm whitespace-nowrap">Nhập Realtime</span>
-              </button>
-
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
               <div className="min-h-20 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-4 flex flex-col items-center justify-center">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF] whitespace-nowrap">Đã qua</span>
                 <span className="mt-1 text-lg font-mono font-black text-indigo-600 whitespace-nowrap">{daysUsed} ngày</span>

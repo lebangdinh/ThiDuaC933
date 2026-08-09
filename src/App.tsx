@@ -826,7 +826,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#F8F9FA] text-[#1A1A1A] font-sans selection:bg-[#1A1A1A] selection:text-white">
       {/* Sidebar / Navigation Rail */}
-      <aside className="fixed left-0 top-0 bottom-0 w-44 bg-white border-r border-[#E5E7EB] z-50 flex flex-col px-4 py-6 shadow-sm">
+      <aside className="fixed left-0 top-0 bottom-0 w-44 bg-white border-r border-[#E5E7EB] z-50 flex flex-col px-4 py-6 shadow-sm overflow-y-auto">
         <div className="mb-5">
           <p className="text-sm font-black text-[#1A1A1A]">NHẬP DỮ LIỆU</p>
           <p className="mt-1 text-xs text-[#6B7280]">Chọn loại số liệu cần cập nhật</p>
@@ -850,6 +850,55 @@ export default function App() {
             <TrendingUp size={24} className="shrink-0" />
             <span className="text-sm font-black">Realtime</span>
           </button>
+        </div>
+
+        <div className="mt-7 mb-3">
+          <p className="text-sm font-black text-[#1A1A1A]">LINK LẤY DỮ LIỆU</p>
+          <p className="mt-1 text-xs text-[#6B7280]">Mở BI hoặc sửa link khi cần</p>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <div className="flex items-stretch gap-2">
+            <a
+              href={biUrlTgdd}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 min-h-14 rounded-xl flex items-center gap-2 px-3 bg-white border border-[#E5E7EB] text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 transition-all shadow-sm"
+              title="Mở BI TGDĐ"
+            >
+              <ExternalLink size={20} className="shrink-0" />
+              <span className="text-sm font-black">TGDĐ</span>
+            </a>
+            <button
+              onClick={() => editBiUrl('TGDĐ', biUrlTgdd, 'thidua-bi-url-tgdd', setBiUrlTgdd)}
+              title="Sửa link BI TGDĐ"
+              aria-label="Sửa link BI TGDĐ"
+              className="w-11 min-h-14 rounded-xl bg-white border border-[#E5E7EB] flex items-center justify-center text-[#6B7280] hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 transition-all shadow-sm"
+            >
+              <Pencil size={18} />
+            </button>
+          </div>
+
+          <div className="flex items-stretch gap-2">
+            <a
+              href={biUrlTopzone}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 min-h-14 rounded-xl flex items-center gap-2 px-3 bg-white border border-[#E5E7EB] text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 transition-all shadow-sm"
+              title="Mở BI Topzone"
+            >
+              <ExternalLink size={20} className="shrink-0" />
+              <span className="text-sm font-black">TZ</span>
+            </a>
+            <button
+              onClick={() => editBiUrl('Topzone', biUrlTopzone, 'thidua-bi-url-topzone', setBiUrlTopzone)}
+              title="Sửa link BI Topzone"
+              aria-label="Sửa link BI Topzone"
+              className="w-11 min-h-14 rounded-xl bg-white border border-[#E5E7EB] flex items-center justify-center text-[#6B7280] hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 transition-all shadow-sm"
+            >
+              <Pencil size={18} />
+            </button>
+          </div>
         </div>
       </aside>
 

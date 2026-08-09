@@ -33,7 +33,6 @@
       var LS_THEME = 'thidua-theme';
       var LS_FONT = 'thidua-font-family';
       var LS_SCALE = 'thidua-font-scale';
-      var LS_BILINK = 'thidua-bi-link';
 
       var THEMES = [
         { id: 'dashboard', label: 'Dashboard BI — Xanh Ngọc', swatch: '#078BA4' },
@@ -137,52 +136,8 @@
           panel.appendChild(row);
         }
 
-        function renderLinkSection() {
-          var hr = document.createElement('hr');
-          panel.appendChild(hr);
-          var h = document.createElement('h4');
-          h.textContent = 'Link dữ liệu BI (đổi mỗi tháng)';
-          panel.appendChild(h);
-
-          var input = document.createElement('input');
-          input.type = 'text';
-          input.placeholder = 'Dán link báo cáo BI tháng này...';
-          input.value = get(LS_BILINK, '');
-          panel.appendChild(input);
-
-          var actions = document.createElement('div');
-          actions.className = 'link-actions';
-
-          var note = document.createElement('div');
-          note.className = 'link-saved-note';
-
-          var saveBtn = document.createElement('button');
-          saveBtn.className = 'btn-save';
-          saveBtn.textContent = 'Lưu link';
-          saveBtn.onclick = function () {
-            set(LS_BILINK, input.value.trim());
-            note.textContent = 'Đã lưu ✓';
-            setTimeout(function () { note.textContent = ''; }, 2000);
-          };
-
-          var openBtn = document.createElement('button');
-          openBtn.className = 'btn-open';
-          openBtn.textContent = 'Mở link';
-          openBtn.onclick = function () {
-            var url = get(LS_BILINK, '');
-            if (url) { window.open(url, '_blank', 'noopener'); }
-            else { note.textContent = 'Chưa có link nào được lưu'; }
-          };
-
-          actions.appendChild(saveBtn);
-          actions.appendChild(openBtn);
-          panel.appendChild(actions);
-          panel.appendChild(note);
-        }
-
         renderThemeSection();
         renderFontSection();
-        renderLinkSection();
 
         btn.onclick = function () { panel.classList.toggle('open'); };
         document.addEventListener('click', function (e) {

@@ -21,6 +21,7 @@ import {
   Image as ImageIcon,
   FileSpreadsheet,
   ExternalLink,
+  Pencil,
   Copy,
   Check
 } from 'lucide-react';
@@ -169,6 +170,20 @@ const BI_URLS = {
   TOPZONE: 'https://bi.thegioididong.com/thi-dua-st?id=92765&tab=1&rt=2&dm=2&mt=2'
 };
 
+const editBiUrl = (
+  storeName: string,
+  currentUrl: string,
+  storageKey: string,
+  setter: (url: string) => void
+) => {
+  const newUrl = window.prompt(`Dán link BI mới cho ${storeName} (link đổi mỗi tháng):`, currentUrl);
+  if (newUrl && newUrl.trim()) {
+    const trimmed = newUrl.trim();
+    localStorage.setItem(storageKey, trimmed);
+    setter(trimmed);
+  }
+};
+
 // --- Helper Functions ---
 
 const parsePastedData = (text: string): KPIData[] => {
@@ -230,6 +245,8 @@ const parseRealtimeData = (text: string): { category: string, value: number }[] 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Supermarket>('TOPZONE');
   const [viewMode, setViewMode] = useState<ViewMode>('DASHBOARD');
+  const [biUrlTgdd, setBiUrlTgdd] = useState<string>(() => localStorage.getItem('thidua-bi-url-tgdd') || BI_URLS.TGDD);
+  const [biUrlTopzone, setBiUrlTopzone] = useState<string>(() => localStorage.getItem('thidua-bi-url-topzone') || BI_URLS.TOPZONE);
   const [data, setData] = useState<KPIData[]>([]);
   const [pastedTextTgdd, setPastedTextTgdd] = useState('');
   const [pastedTextTopzone, setPastedTextTopzone] = useState('');
@@ -955,26 +972,44 @@ export default function App() {
             <TrendingUp size={18} />
             <span className="text-[8px] font-black mt-0.5 uppercase">Realtime</span>
           </button>
-          <a 
-            href={BI_URLS.TGDD} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="w-12 h-12 rounded-xl flex flex-col items-center justify-center bg-white border border-[#E5E7EB] text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm"
-            title="BI TGDĐ"
-          >
-            <ExternalLink size={16} />
-            <span className="text-[8px] font-black mt-0.5">TGDĐ</span>
-          </a>
-          <a 
-            href={BI_URLS.TOPZONE} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="w-12 h-12 rounded-xl flex flex-col items-center justify-center bg-white border border-[#E5E7EB] text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm"
-            title="BI Topzone"
-          >
-            <ExternalLink size={16} />
-            <span className="text-[8px] font-black mt-0.5">TZ</span>
-          </a>
+          <div className="relative">
+            <a 
+              href={biUrlTgdd} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="w-12 h-12 rounded-xl flex flex-col items-center justify-center bg-white border border-[#E5E7EB] text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm"
+              title="BI TGDĐ"
+            >
+              <ExternalLink size={16} />
+              <span className="text-[8px] font-black mt-0.5">TGDĐ</span>
+            </a>
+            <button
+              onClick={() => editBiUrl('TGDĐ', biUrlTgdd, 'thidua-bi-url-tgdd', setBiUrlTgdd)}
+              title="Sửa link BI TGDĐ (đổi mỗi tháng)"
+              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-white border border-[#E5E7EB] flex items-center justify-center text-[#9CA3AF] hover:text-indigo-600 hover:border-indigo-300 shadow-sm"
+            >
+              <Pencil size={10} />
+            </button>
+          </div>
+          <div className="relative">
+            <a 
+              href={biUrlTopzone} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="w-12 h-12 rounded-xl flex flex-col items-center justify-center bg-white border border-[#E5E7EB] text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm"
+              title="BI Topzone"
+            >
+              <ExternalLink size={16} />
+              <span className="text-[8px] font-black mt-0.5">TZ</span>
+            </a>
+            <button
+              onClick={() => editBiUrl('Topzone', biUrlTopzone, 'thidua-bi-url-topzone', setBiUrlTopzone)}
+              title="Sửa link BI Topzone (đổi mỗi tháng)"
+              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-white border border-[#E5E7EB] flex items-center justify-center text-[#9CA3AF] hover:text-indigo-600 hover:border-indigo-300 shadow-sm"
+            >
+              <Pencil size={10} />
+            </button>
+          </div>
         </div>
         <div className="mt-auto">
           {/* Bottom space reserved */}

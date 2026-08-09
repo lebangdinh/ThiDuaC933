@@ -826,82 +826,35 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#F8F9FA] text-[#1A1A1A] font-sans selection:bg-[#1A1A1A] selection:text-white">
       {/* Sidebar / Navigation Rail */}
-      <div className="fixed left-0 top-0 bottom-0 w-16 bg-white border-r border-[#E5E7EB] z-50 flex flex-col items-center py-8 gap-8">
-        <div className="w-10 h-10 bg-[#1A1A1A] rounded-xl flex items-center justify-center text-white font-serif italic text-xl">
-          K
+      <aside className="fixed left-0 top-0 bottom-0 w-44 bg-white border-r border-[#E5E7EB] z-50 flex flex-col px-4 py-6 shadow-sm">
+        <div className="mb-5">
+          <p className="text-sm font-black text-[#1A1A1A]">NHẬP DỮ LIỆU</p>
+          <p className="mt-1 text-xs text-[#6B7280]">Chọn loại số liệu cần cập nhật</p>
         </div>
-        <div className="flex flex-col gap-4">
-          <div className="w-12 h-12 rounded-xl flex flex-col items-center justify-center bg-[#1A1A1A] text-white shadow-lg relative" title="Tất cả">
-            <BarChart3 size={18} />
-            <span className="text-[8px] font-black mt-0.5">Tất cả</span>
-            {activeSubjectsCount > 0 && (
-              <div className="absolute -top-1 -right-1 bg-rose-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full border-2 border-white shadow-sm">
-                {activeSubjectsCount}
-              </div>
-            )}
-          </div>
+
+        <div className="flex flex-col gap-3">
           <button 
             onClick={() => setShowImport(true)}
-            className="w-12 h-12 rounded-xl flex flex-col items-center justify-center text-[#9CA3AF] hover:bg-indigo-50 hover:text-indigo-600 transition-all border border-transparent hover:border-indigo-100"
+            className="w-full min-h-16 rounded-2xl flex items-center gap-3 px-4 bg-indigo-50 text-indigo-600 border border-indigo-100 hover:shadow-md hover:-translate-y-0.5 transition-all text-left"
             title="Nhập dữ liệu Lũy Kế"
           >
-            <ClipboardPaste size={18} />
-            <span className="text-[8px] font-black mt-0.5">Lũy Kế</span>
+            <ClipboardPaste size={24} className="shrink-0" />
+            <span className="text-sm font-black">Lũy Kế</span>
           </button>
+
           <button 
             onClick={() => setShowRealtimeImport(true)}
-            className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center transition-all border ${data.some(d => d.realtime !== undefined) ? 'bg-amber-100 text-amber-600 border-amber-200' : 'text-[#9CA3AF] hover:bg-amber-50 hover:text-amber-600 border-transparent hover:border-amber-100'}`}
-            title="Nhập Realtime"
+            className={`w-full min-h-16 rounded-2xl flex items-center gap-3 px-4 border hover:shadow-md hover:-translate-y-0.5 transition-all text-left ${data.some(d => d.realtime !== undefined) ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-white text-amber-700 border-amber-200 hover:bg-amber-50'}`}
+            title="Nhập dữ liệu Realtime"
           >
-            <TrendingUp size={18} />
-            <span className="text-[8px] font-black mt-0.5 uppercase">Realtime</span>
+            <TrendingUp size={24} className="shrink-0" />
+            <span className="text-sm font-black">Realtime</span>
           </button>
-          <div className="relative">
-            <a 
-              href={biUrlTgdd} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="w-12 h-12 rounded-xl flex flex-col items-center justify-center bg-white border border-[#E5E7EB] text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm"
-              title="BI TGDĐ"
-            >
-              <ExternalLink size={16} />
-              <span className="text-[8px] font-black mt-0.5">TGDĐ</span>
-            </a>
-            <button
-              onClick={() => editBiUrl('TGDĐ', biUrlTgdd, 'thidua-bi-url-tgdd', setBiUrlTgdd)}
-              title="Sửa link BI TGDĐ (đổi mỗi tháng)"
-              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-white border border-[#E5E7EB] flex items-center justify-center text-[#9CA3AF] hover:text-indigo-600 hover:border-indigo-300 shadow-sm"
-            >
-              <Pencil size={10} />
-            </button>
-          </div>
-          <div className="relative">
-            <a 
-              href={biUrlTopzone} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="w-12 h-12 rounded-xl flex flex-col items-center justify-center bg-white border border-[#E5E7EB] text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm"
-              title="BI Topzone"
-            >
-              <ExternalLink size={16} />
-              <span className="text-[8px] font-black mt-0.5">TZ</span>
-            </a>
-            <button
-              onClick={() => editBiUrl('Topzone', biUrlTopzone, 'thidua-bi-url-topzone', setBiUrlTopzone)}
-              title="Sửa link BI Topzone (đổi mỗi tháng)"
-              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-white border border-[#E5E7EB] flex items-center justify-center text-[#9CA3AF] hover:text-indigo-600 hover:border-indigo-300 shadow-sm"
-            >
-              <Pencil size={10} />
-            </button>
-          </div>
         </div>
-        <div className="mt-auto">
-          {/* Bottom space reserved */}
-        </div>
-      </div>
+      </aside>
 
       {/* Main Content Area */}
-      <div className="pl-16 min-h-screen bg-[#F8F9FA]">
+      <div className="pl-44 min-h-screen bg-[#F8F9FA]">
         <div className="max-w-6xl mx-auto p-8 space-y-8">
           {/* Header */}
           <header className="bg-white border border-[#E5E7EB] rounded-2xl px-8 py-6 shadow-sm">

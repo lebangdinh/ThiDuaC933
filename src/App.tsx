@@ -1267,7 +1267,7 @@ export default function App() {
             )}
 
             {/* Main Tracking Section */}
-            <div ref={topzoneRef} className="space-y-6 bg-[#F8F9FA] rounded-[2rem] p-8 border border-[#E5E7EB] shadow-sm">
+            <div ref={topzoneRef} className={`space-y-6 bg-[#F8F9FA] rounded-[2rem] p-8 border border-[#E5E7EB] shadow-sm ${isExporting ? 'export-capture' : ''}`}>
                 <div className="flex items-center gap-3 px-2">
                   <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
                     <TrendingUp size={20} className="text-white" />
@@ -1371,7 +1371,7 @@ export default function App() {
             </div>
 
             <div className={isExporting ? "" : "overflow-x-auto"}>
-              <table className="w-full text-left border-collapse">
+              <table className="kpi-main-table w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-[#F9FAFB] text-[10px] font-bold uppercase tracking-widest text-[#6B7280] border-b border-[#E5E7EB]">
                     <th className="px-3 py-1.5 w-10"></th>
@@ -1442,15 +1442,15 @@ export default function App() {
                             <td className="px-3 py-1 text-center font-mono text-xs text-[#9CA3AF]">
                               {index + 1}
                             </td>
-                            <td className="px-3 py-1">
+                            <td className="kpi-category-cell px-3 py-1">
                               <div className="flex flex-col">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className={`text-sm font-black ${item.realtime !== undefined ? 'text-blue-900' : ''}`}>{item.category}</span>
+                                <div className="kpi-category-content flex items-center gap-2 flex-wrap">
+                                  <span className={`kpi-category-name text-sm font-black ${item.realtime !== undefined ? 'text-blue-900' : ''}`}>{item.category}</span>
                                   {item.realtime !== undefined && (
-                                    <span className="text-[8px] font-black bg-amber-100 text-amber-600 px-1 rounded uppercase">Realtime</span>
+                                    <span className="kpi-status-badge text-[8px] font-black bg-amber-100 text-amber-600 px-1 rounded uppercase">Realtime</span>
                                   )}
                                   {isTopMissing && (
-                                    <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded flex items-center gap-1 uppercase tracking-wider ${
+                                    <span className={`kpi-status-badge text-[9px] font-extrabold px-1.5 py-0.5 rounded flex items-center gap-1 uppercase tracking-wider ${
                                       topMissingRank === 1 
                                         ? 'bg-rose-600 text-white animate-pulse' 
                                         : topMissingRank === 2

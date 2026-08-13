@@ -1,1 +1,54 @@
 @import "tailwindcss";
+
+/* Keep the cloned KPI table stable while html-to-image measures it. */
+.export-capture .kpi-main-table {
+  table-layout: fixed;
+}
+
+.export-capture .kpi-main-table th:nth-child(1) { width: 42px; }
+.export-capture .kpi-main-table th:nth-child(2) { width: 54px; }
+.export-capture .kpi-main-table th:nth-child(3) { width: 360px; }
+.export-capture .kpi-main-table th:nth-child(4) { width: 155px; }
+.export-capture .kpi-main-table th:nth-child(5) { width: 125px; }
+.export-capture .kpi-main-table th:nth-child(6) { width: 125px; }
+.export-capture .kpi-main-table th:nth-child(7) { width: 145px; }
+.export-capture .kpi-main-table th:nth-child(8) { width: 150px; }
+.export-capture .kpi-main-table th:nth-child(9) { width: 165px; }
+.export-capture .kpi-main-table th:nth-child(10) { width: 95px; }
+
+.export-capture .kpi-category-cell {
+  height: auto;
+  min-height: 64px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  vertical-align: middle;
+}
+
+.export-capture .kpi-category-content {
+  align-items: flex-start;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 5px;
+}
+
+.export-capture .kpi-category-name {
+  display: block;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  width: 100%;
+}
+
+.export-capture .kpi-status-badge {
+  align-self: flex-start;
+  flex: none;
+  line-height: 1.25;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+.export-capture *,
+.export-capture *::before,
+.export-capture *::after {
+  animation: none !important;
+  transition: none !important;
+}

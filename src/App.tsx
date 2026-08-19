@@ -822,20 +822,57 @@ export default function App() {
     if (watchlistRef.current) {
       setIsExporting(true);
       setTimeout(async () => {
+        const exportNode = watchlistRef.current!;
+        const gridNode = exportNode.querySelector<HTMLElement>('[data-watchlist-grid]');
+        const columnCount = Math.min(6, Math.max(1, watchedItems.length));
+        const cardWidth = 240;
+        const gap = 8;
+        const horizontalPadding = 64;
+        const exportWidth = (columnCount * cardWidth) + ((columnCount - 1) * gap) + horizontalPadding;
+
+        const previousNodeStyles = {
+          width: exportNode.style.width,
+          maxWidth: exportNode.style.maxWidth,
+          padding: exportNode.style.padding,
+          boxSizing: exportNode.style.boxSizing,
+          overflow: exportNode.style.overflow,
+        };
+        const previousGridColumns = gridNode?.style.gridTemplateColumns ?? '';
+
         try {
-          const dataUrl = await htmlToImage.toPng(watchlistRef.current!, {
+          // Give html-to-image a stable, content-sized layout before it measures
+          // the node. This prevents short watchlists from producing a 1600px
+          // blank area and prevents the last column from being clipped.
+          Object.assign(exportNode.style, {
+            width: `${exportWidth}px`,
+            maxWidth: 'none',
+            padding: '32px',
+            boxSizing: 'border-box',
+            overflow: 'visible',
+          });
+          if (gridNode) {
+            gridNode.style.gridTemplateColumns = `repeat(${columnCount}, minmax(0, 1fr))`;
+          }
+
+          await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+          const exportHeight = exportNode.scrollHeight;
+
+          const dataUrl = await htmlToImage.toPng(exportNode, {
             backgroundColor: '#F8F9FA',
             pixelRatio: 3,
             cacheBust: true,
+            width: exportWidth,
+            height: exportHeight,
             filter: (node: any) => {
               return node.id !== 'watchlist-export-btn' && node.id !== 'watchlist-copy-btn';
             },
             style: {
               borderRadius: '0',
               margin: '0',
-              padding: '40px',
-              width: '1600px',
-              height: 'auto',
+              padding: '32px',
+              width: `${exportWidth}px`,
+              height: `${exportHeight}px`,
+              boxSizing: 'border-box',
               overflow: 'visible',
               maxWidth: 'none',
             }
@@ -847,6 +884,10 @@ export default function App() {
         } catch (error) {
           console.error('Error exporting watchlist image:', error);
         } finally {
+          Object.assign(exportNode.style, previousNodeStyles);
+          if (gridNode) {
+            gridNode.style.gridTemplateColumns = previousGridColumns;
+          }
           setIsExporting(false);
         }
       }, 100);
@@ -1163,7 +1204,7 @@ export default function App() {
                     </button>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                <div data-watchlist-grid className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
                   {watchedItems.map(item => {
                     const daily = calculateDaily(item);
                     const progress = getCompletionPercent(item);
